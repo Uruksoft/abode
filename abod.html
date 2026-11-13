@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>إدارة المشتريات وقائمة الشراء</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #bbf7d0;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #86efac;
+        }
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3 space-x-reverse">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-200">
+                    <i class="fa-solid fa-cart-shopping text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-slate-900" id="headerProjectName">نظام المشتريات وقائمة الشراء</h1>
+                    <p class="text-xs text-slate-500">إدارة المواد والتحاسب اليومي والشهري</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2 space-x-reverse">
+                <button onclick="openSettingsModal()" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition" title="إعدادات التطبيق">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+                <button onclick="exportDataJSON()" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition" title="نسخ احتياطي للبيانات">
+                    <i class="fa-solid fa-download"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-5 mb-24">
+        
+        <!-- Tabs Navigation -->
+        <div class="flex bg-slate-200/80 p-1.5 rounded-2xl mb-6 shadow-inner no-print overflow-x-auto">
+            <button onclick="switchTab('shopping')" id="tabBtn-shopping" class="flex-1 py-2.5 px-3 rounded-xl font-bold text-sm transition flex items-center justify-center space-x-2 space-x-reverse bg-white text-emerald-600 shadow-sm whitespace-nowrap">
+                <i class="fa-solid fa-basket-shopping"></i>
+                <span>قائمة الشراء الحالية</span>
+            </button>
+            <button onclick="switchTab('materials')" id="tabBtn-materials" class="flex-1 py-2.5 px-3 rounded-xl font-bold text-sm transition flex items-center justify-center space-x-2 space-x-reverse text-slate-600 hover:text-slate-900 whitespace-nowrap">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <span>إدارة المواد</span>
+            </button>
+            <button onclick="switchTab('reports')" id="tabBtn-reports" class="flex-1 py-2.5 px-3 rounded-xl font-bold text-sm transition flex items-center justify-center space-x-2 space-x-reverse text-slate-600 hover:text-slate-900 whitespace-nowrap">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+                <span>سجل المشتريات والتقارير</span>
+            </button>
+        </div>
+
+        <!-- TAB 1: SHOPPING LIST (CURRENT) -->
+        <div id="tabContent-shopping" class="space-y-6">
+            
+            <!-- Quick Summary & Checkout Card -->
+            <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden">
+                <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs uppercase tracking-wider bg-white/10 px-3 py-1 rounded-full text-emerald-300 font-semibold">إجمالي قائمة الشراء غير المتحاسب عليها</span>
+                    <i class="fa-solid fa-receipt text-emerald-400 text-xl"></i>
+                </div>
+                <div class="text-3xl md:text-4xl font-black mb-4 tracking-tight" id="activeCartTotal">0 د.ع</div>
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/10 text-sm">
+                    <div>
+                        <span class="text-slate-300 block text-xs">عدد المواد المحددة</span>
+                        <span class="font-bold text-base" id="activeCartCount">0 مادة</span>
+                    </div>
+                    <button onclick="checkoutCart()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-2xl shadow-lg shadow-emerald-900/50 transition flex items-center space-x-2 space-x-reverse text-sm">
+                        <i class="fa-solid fa-cash-register"></i>
+                        <span>إتمام التحاسب وترحيل القائمة</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Add Item to Cart Bar / Quick Selection -->
+            <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-bold text-slate-900 flex items-center space-x-2 space-x-reverse">
+                        <i class="fa-solid fa-circle-plus text-emerald-600"></i>
+                        <span>إضافة مادة لقائمة الشراء</span>
+                    </h3>
+                    <span class="text-xs text-slate-400">اختر من المواد المعرفة مسبقاً</span>
+                </div>
+
+                <form onsubmit="addItemToCart(event)" class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    <div class="md:col-span-5">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">المادة *</label>
+                        <select id="cartMaterialSelect" required onchange="onMaterialSelected()" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="">-- اختر المادة --</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">الكمية *</label>
+                        <input type="number" step="any" id="cartQty" required min="0.1" placeholder="1" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">السعر (للوحدة) *</label>
+                        <input type="number" step="any" id="cartPrice" required min="0" placeholder="0" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div class="md:col-span-2 flex items-end">
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl transition text-sm shadow-md shadow-emerald-100 flex items-center justify-center space-x-1 space-x-reverse">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>إضافة</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Shopping Cart Table / List -->
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="font-bold text-slate-900">مواد قائمة الشراء الحالية</h3>
+                    <button onclick="clearCart()" class="text-rose-500 hover:text-rose-700 text-xs font-bold transition flex items-center space-x-1 space-x-reverse">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span>فرغ القائمة</span>
+                    </button>
+                </div>
+                <div id="cartItemsList" class="divide-y divide-slate-100">
+                    <!-- Dynamic Cart Items -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TAB 2: MATERIALS MANAGEMENT -->
+        <div id="tabContent-materials" class="space-y-6 hidden">
+            
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="font-black text-xl text-slate-900">إدارة المواد الأساسية</h2>
+                    <p class="text-xs text-slate-500">تعريف المواد ووحداتها الثابتة (كارتون، شليف، صندوق، تنكة، بطل...)</p>
+                </div>
+                <button onclick="openMaterialModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-3 rounded-2xl shadow-lg shadow-emerald-200 transition flex items-center space-x-2 space-x-reverse text-sm">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>إضافة مادة جديدة</span>
+                </button>
+            </div>
+
+            <!-- Search Material -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="materialSearchInput" oninput="renderMaterialsList()" placeholder="ابحث عن اسم المادة..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pr-11 pl-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+            </div>
+
+            <!-- Materials Grid/List -->
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                <div id="materialsListContainer" class="divide-y divide-slate-100">
+                    <!-- Dynamic materials -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TAB 3: REPORTS & ARCHIVE -->
+        <div id="tabContent-reports" class="space-y-6 hidden">
+            
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 no-print">
+                <h2 class="font-black text-xl text-slate-900 mb-1">سجل المشتريات والتحاسبات</h2>
+                <p class="text-xs text-slate-500 mb-5">عرض الأرشيف حسب التواريخ (يومي، أسبوعي، شهري) أو طباعة التقارير</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">من تاريخ</label>
+                        <input type="date" id="reportStartDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">إلى تاريخ</label>
+                        <input type="date" id="reportEndDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="generateReport()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition text-sm flex items-center justify-center space-x-2 space-x-reverse shadow-lg shadow-emerald-100">
+                        <i class="fa-solid fa-filter"></i>
+                        <span>عرض التقرير</span>
+                    </button>
+                    <button onclick="window.print()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-6 py-3 rounded-xl transition text-sm flex items-center space-x-2 space-x-reverse">
+                        <i class="fa-solid fa-print"></i>
+                        <span>طباعة / PDF</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Report Results Box -->
+            <div id="reportResultContainer" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hidden space-y-4">
+                <div class="border-b border-slate-100 pb-4 flex justify-between items-center">
+                    <div>
+                        <h3 class="font-black text-lg text-slate-900" id="reportTitle">تقرير التحاسبات والمشتريات</h3>
+                        <p class="text-xs text-slate-500" id="reportDateRangeText"></p>
+                    </div>
+                    <div class="text-left">
+                        <span class="text-xs text-slate-400 block">إجمالي الفترة</span>
+                        <span class="font-black text-emerald-600 text-lg" id="reportTotalAmount">0 د.ع</span>
+                    </div>
+                </div>
+                <div id="reportArchiveList" class="space-y-4">
+                    <!-- Dynamic archived checkout sessions -->
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Floating Quick Action for Mobile -->
+    <div class="fixed bottom-6 left-6 z-20 no-print md:hidden">
+        <button onclick="switchTab('shopping')" class="w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xl flex items-center justify-center text-xl transition transform hover:scale-105 active:scale-95">
+            <i class="fa-solid fa-basket-shopping"></i>
+        </button>
+    </div>
+
+    <!-- MODAL: ADD / EDIT MATERIAL -->
+    <div id="materialModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4 hidden transition-opacity">
+        <div class="bg-white w-full max-w-md rounded-t-3xl md:rounded-3xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="font-black text-xl text-slate-900" id="materialModalTitle">إضافة مادة جديدة</h3>
+                <button onclick="closeMaterialModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="materialForm" onsubmit="saveMaterial(event)" class="space-y-4">
+                <input type="hidden" id="materialId">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">اسم المادة *</label>
+                    <input type="text" id="matName" required placeholder="مثلاً: طحين، زيت، بيبسي..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">الوحدة القياسية *</label>
+                    <select id="matUnit" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="كارتون">كارتون</option>
+                        <option value="شليف">شليف</option>
+                        <option value="بالة">بالة</option>
+                        <option value="بطل">بطل</option>
+                        <option value="تنكة">تنكة</option>
+                        <option value="كونية">كونية</option>
+                        <option value="جيس">جيس</option>
+                        <option value="قنينة">قنينة</option>
+                        <option value="سيت">سيت</option>
+                        <option value="درزن">درزن</option>
+                        <option value="لتر">لتر</option>
+                        <option value="كيلوغرام">كيلوغرام</option>
+                        <option value="قطعة">قطعة</option>
+                        <option value="أخرى">أخرى</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">سعر شراء تقريبي (اختياري)</label>
+                    <input type="number" step="any" id="matDefaultPrice" placeholder="0" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <div class="pt-3 flex gap-3">
+                    <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl transition text-sm shadow-lg shadow-emerald-200">
+                        حفظ المادة
+                    </button>
+                    <button type="button" onclick="closeMaterialModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-6 py-3.5 rounded-2xl transition text-sm">
+                        إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: SETTINGS -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="font-black text-xl text-slate-900">إعدادات التطبيق</h3>
+                <button onclick="closeSettingsModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form onsubmit="saveSettings(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">اسم المشروع / المطعم</label>
+                    <input type="text" id="settingAppName" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <div class="pt-3">
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl transition text-sm shadow-lg shadow-emerald-200">
+                        حفظ الإعدادات
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 space-x-reverse translate-y-32 opacity-0 transition-all duration-300 z-50 text-sm">
+        <i id="toastIcon" class="fa-solid fa-check-circle text-emerald-400 text-lg"></i>
+        <span id="toastMessage">تم الحفظ بنجاح</span>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Default App State
+        let appData = {
+            appName: "نظام المشتريات وقائمة الشراء",
+            materials: [], // Defined items with units
+            activeCart: [], // Current shopping list items being added
+            archiveSessions: [] // Completed and checked out shopping sessions
+        };
+
+        // Load from Local Storage on start
+        function loadData() {
+            const saved = localStorage.getItem('restaurant_procurement_data_v2');
+            if (saved) {
+                try {
+                    appData = JSON.parse(saved);
+                } catch(e) {
+                    console.error("Error loading data", e);
+                }
+            } else {
+                // Initial demo data with new units
+                appData.materials = [
+                    { id: 'm1', name: 'طحين أصفر', unit: 'جيس', defaultPrice: 35000 },
+                    { id: 'm2', name: 'زيت نباتي', unit: 'تنكة', defaultPrice: 45000 },
+                    { id: 'm3', name: 'بيبسي عائلي', unit: 'كارتون', defaultPrice: 18000 },
+                    { id: 'm4', name: 'شاي أخضر', unit: 'بالة', defaultPrice: 12000 },
+                    { id: 'm5', name: 'مشروب غازي', unit: 'بطل', defaultPrice: 750 }
+                ];
+                appData.activeCart = [
+                    { id: 'c1', materialId: 'm1', name: 'طحين أصفر', unit: 'جيس', qty: 2, price: 35000 },
+                    { id: 'c2', materialId: 'm3', name: 'بيبسي عائلي', unit: 'كارتون', qty: 3, price: 18000 }
+                ];
+                saveDataToStorage();
+            }
+        }
+
+        function saveDataToStorage() {
+            localStorage.setItem('restaurant_procurement_data_v2', JSON.stringify(appData));
+        }
+
+        // Initialize UI on load
+        window.onload = function() {
+            loadData();
+            document.getElementById('headerProjectName').innerText = appData.appName;
+            document.getElementById('settingAppName').value = appData.appName;
+
+            updateAllViews();
+        };
+
+        // Tab Switcher
+        function switchTab(tabId) {
+            ['shopping', 'materials', 'reports'].forEach(t => {
+                document.getElementById(`tabContent-${t}`).classList.add('hidden');
+                const btn = document.getElementById(`tabBtn-${t}`);
+                btn.className = "flex-1 py-2.5 px-3 rounded-xl font-bold text-sm transition flex items-center justify-center space-x-2 space-x-reverse text-slate-600 hover:text-slate-900 whitespace-nowrap";
+            });
+
+            document.getElementById(`tabContent-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tabBtn-${tabId}`);
+            activeBtn.className = "flex-1 py-2.5 px-3 rounded-xl font-bold text-sm transition flex items-center justify-center space-x-2 space-x-reverse bg-white text-emerald-600 shadow-sm whitespace-nowrap";
+        }
+
+        // Update All Views
+        function updateAllViews() {
+            updateMaterialsDropdown();
+            renderMaterialsList();
+            renderCartList();
+        }
+
+        // Update Materials Dropdown in Shopping tab
+        function updateMaterialsDropdown() {
+            const select = document.getElementById('cartMaterialSelect');
+            select.innerHTML = '<option value="">-- اختر المادة --</option>';
+            appData.materials.forEach(mat => {
+                select.innerHTML += `<option value="${mat.id}" data-price="${mat.defaultPrice || 0}" data-unit="${mat.unit}">${escapeHtml(mat.name)} (${mat.unit})</option>`;
+            });
+        }
+
+        function onMaterialSelected() {
+            const select = document.getElementById('cartMaterialSelect');
+            const opt = select.options[select.selectedIndex];
+            const price = opt.getAttribute('data-price');
+            if (price) {
+                document.getElementById('cartPrice').value = price;
+            }
+            document.getElementById('cartQty').value = '1';
+        }
+
+        // Add Item to Current Cart
+        function addItemToCart(e) {
+            e.preventDefault();
+            const select = document.getElementById('cartMaterialSelect');
+            const matId = select.value;
+            if (!matId) return;
+
+            const opt = select.options[select.selectedIndex];
+            const name = opt.text.split(' (')[0];
+            const unit = opt.getAttribute('data-unit');
+            const qty = parseFloat(document.getElementById('cartQty').value);
+            const price = parseFloat(document.getElementById('cartPrice').value);
+
+            const newItem = {
+                id: 'cart_' + Date.now(),
+                materialId: matId,
+                name: name,
+                unit: unit,
+                qty: qty,
+                price: price
+            };
+
+            appData.activeCart.push(newItem);
+            saveDataToStorage();
+            renderCartList();
+
+            // Reset form
+            select.value = '';
+            document.getElementById('cartQty').value = '';
+            document.getElementById('cartPrice').value = '';
+            showToast("تمت الإضافة لقائمة الشراء");
+        }
+
+        // Render Cart List
+        function renderCartList() {
+            const container = document.getElementById('cartItemsList');
+            container.innerHTML = '';
+
+            let totalSum = 0;
+            const count = appData.activeCart.length;
+
+            if (count === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 px-4">
+                        <i class="fa-solid fa-basket-shopping text-slate-300 text-4xl mb-3"></i>
+                        <p class="text-slate-500 font-medium text-sm">قائمة الشراء فارغة حالياً. أضف مواد للبدء.</p>
+                    </div>
+                `;
+                document.getElementById('activeCartTotal').innerText = formatCurrency(0);
+                document.getElementById('activeCartCount').innerText = '0 مادة';
+                return;
+            }
+
+            appData.activeCart.forEach((item, index) => {
+                const itemTotal = item.qty * item.price;
+                totalSum += itemTotal;
+
+                container.innerHTML += `
+                    <div class="p-4 hover:bg-slate-50 transition flex items-center justify-between gap-4">
+                        <div class="flex items-center space-x-3 space-x-reverse">
+                            <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                                <span class="font-bold text-xs">${index + 1}</span>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-900 text-sm">${escapeHtml(item.name)}</h4>
+                                <p class="text-xs text-slate-500">الكمية: <span class="font-bold text-slate-700">${item.qty} ${item.unit}</span> × ${formatCurrency(item.price)}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3 space-x-reverse shrink-0">
+                            <span class="font-black text-slate-900 text-sm md:text-base">${formatCurrency(itemTotal)}</span>
+                            <button onclick="removeCartItem('${item.id}')" class="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition" title="حذف من القائمة">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('activeCartTotal').innerText = formatCurrency(totalSum);
+            document.getElementById('activeCartCount').innerText = count + ' مواد';
+        }
+
+        function removeCartItem(id) {
+            appData.activeCart = appData.activeCart.filter(i => i.id !== id);
+            saveDataToStorage();
+            renderCartList();
+            showToast("تمت ازالة المادة");
+        }
+
+        function clearCart() {
+            if (confirm("هل أنت متأكد من تفريغ قائمة الشراء الحالية؟")) {
+                appData.activeCart = [];
+                saveDataToStorage();
+                renderCartList();
+                showToast("تم تفريغ القائمة");
+            }
+        }
+
+        // Checkout Cart (End of day/week/month calculation and archive)
+        function checkoutCart() {
+            if (appData.activeCart.length === 0) {
+                showToast("قائمة الشراء فارغة بالفعل!");
+                return;
+            }
+
+            if (confirm("هل تريد إتمام التحاسب وترحيل هذه القائمة إلى الأرشيف وتصفير قائمة الشراء لتبدأ من جديد؟")) {
+                const totalAmount = appData.activeCart.reduce((sum, i) => sum + (i.qty * i.price), 0);
+                const session = {
+                    id: 'session_' + Date.now(),
+                    date: new Date().toISOString().split('T')[0],
+                    timestamp: new Date().toLocaleString('ar-IQ'),
+                    items: [...appData.activeCart],
+                    total: totalAmount
+                };
+
+                appData.archiveSessions.push(session);
+                appData.activeCart = []; // Clear active cart
+                saveDataToStorage();
+                renderCartList();
+                showToast("تم التحاسب وترحيل المشتريات للأرشيف بنجاح!");
+            }
+        }
+
+        // Materials Management Logic
+        function renderMaterialsList() {
+            const search = document.getElementById('materialSearchInput').value.toLowerCase();
+            const container = document.getElementById('materialsListContainer');
+            container.innerHTML = '';
+
+            let filtered = appData.materials.filter(m => m.name.toLowerCase().includes(search));
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 px-4">
+                        <i class="fa-solid fa-boxes-stacked text-slate-300 text-4xl mb-3"></i>
+                        <p class="text-slate-500 font-medium text-sm">لا توجد مواد معرفة مطابقة</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(mat => {
+                container.innerHTML += `
+                    <div class="p-4 hover:bg-slate-50 transition flex items-center justify-between gap-4">
+                        <div class="flex items-center space-x-3 space-x-reverse">
+                            <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-box text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-900 text-sm">${escapeHtml(mat.name)}</h4>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="bg-emerald-100 text-emerald-700 text-xs px-2.5 py-0.5 rounded-lg font-bold">${mat.unit}</span>
+                                    ${mat.defaultPrice ? `<span class="text-xs text-slate-400">• سعر تقريبي: ${formatCurrency(mat.defaultPrice)}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1 space-x-reverse">
+                            <button onclick="editMaterial('${mat.id}')" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition" title="تعديل">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteMaterial('${mat.id}')" class="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition" title="حذف">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openMaterialModal(id = null) {
+            document.getElementById('materialModal').classList.remove('hidden');
+            if (id) {
+                document.getElementById('materialModalTitle').innerText = "تعديل المادة";
+                const mat = appData.materials.find(m => m.id === id);
+                if (mat) {
+                    document.getElementById('materialId').value = mat.id;
+                    document.getElementById('matName').value = mat.name;
+                    document.getElementById('matUnit').value = mat.unit;
+                    document.getElementById('matDefaultPrice').value = mat.defaultPrice || '';
+                }
+            } else {
+                document.getElementById('materialModalTitle').innerText = "إضافة مادة جديدة";
+                document.getElementById('materialForm').reset();
+                document.getElementById('materialId').value = '';
+            }
+        }
+
+        function closeMaterialModal() {
+            document.getElementById('materialModal').classList.add('hidden');
+        }
+
+        function saveMaterial(e) {
+            e.preventDefault();
+            const id = document.getElementById('materialId').value;
+            const name = document.getElementById('matName').value.trim();
+            const unit = document.getElementById('matUnit').value;
+            const defaultPrice = parseFloat(document.getElementById('matDefaultPrice').value) || 0;
+
+            if (id) {
+                const index = appData.materials.findIndex(m => m.id === id);
+                if (index !== -1) {
+                    appData.materials[index] = { id, name, unit, defaultPrice };
+                }
+                showToast("تم تحديث المادة بنجاح");
+            } else {
+                const newMat = {
+                    id: 'mat_' + Date.now(),
+                    name,
+                    unit,
+                    defaultPrice
+                };
+                appData.materials.push(newMat);
+                showToast("تم إضافة المادة بنجاح");
+            }
+
+            saveDataToStorage();
+            updateAllViews();
+            closeMaterialModal();
+        }
+
+        function editMaterial(id) {
+            openMaterialModal(id);
+        }
+
+        function deleteMaterial(id) {
+            if (confirm("هل أنت متأكد من حذف هذه المادة؟")) {
+                appData.materials = appData.materials.filter(m => m.id !== id);
+                saveDataToStorage();
+                updateAllViews();
+                showToast("تم حذف المادة");
+            }
+        }
+
+        // Reports & Archive Generation
+        function generateReport() {
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+
+            let filteredSessions = appData.archiveSessions;
+            if (startDate) {
+                filteredSessions = filteredSessions.filter(s => s.date >= startDate);
+            }
+            if (endDate) {
+                filteredSessions = filteredSessions.filter(s => s.date <= endDate);
+            }
+
+            const totalSum = filteredSessions.reduce((sum, s) => sum + s.total, 0);
+
+            document.getElementById('reportTitle').innerText = `تقرير المشتريات والتحاسبات (${appData.appName})`;
+            document.getElementById('reportDateRangeText').innerText = startDate || endDate ? `الفترة من: ${startDate || 'البداية'} إلى: ${endDate || 'اليوم'}` : `جميع العمليات والأرشيف`;
+            document.getElementById('reportTotalAmount').innerText = formatCurrency(totalSum);
+
+            const container = document.getElementById('reportArchiveList');
+            container.innerHTML = '';
+
+            if (filteredSessions.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">لا توجد سجلات تحاسب في هذه الفترة</p>`;
+            } else {
+                filteredSessions.reverse().forEach(session => {
+                    let itemsHtml = '';
+                    session.items.forEach(it => {
+                        itemsHtml += `
+                            <div class="flex justify-between text-xs text-slate-600 py-1 border-b border-slate-100 last:border-none">
+                                <span>${escapeHtml(it.name)} (${it.qty} ${it.unit})</span>
+                                <span class="font-bold">${formatCurrency(it.qty * it.price)}</span>
+                            </div>
+                        `;
+                    });
+
+                    container.innerHTML += `
+                        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                            <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+                                <span class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-calendar-day text-emerald-600 ml-2"></i> ${session.timestamp}</span>
+                                <span class="font-black text-emerald-600 text-base">${formatCurrency(session.total)}</span>
+                            </div>
+                            <div class="space-y-1 pt-1">
+                                ${itemsHtml}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('reportResultContainer').classList.remove('hidden');
+        }
+
+        // Settings Modal
+        function openSettingsModal() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function saveSettings(e) {
+            e.preventDefault();
+            const aName = document.getElementById('settingAppName').value.trim();
+            appData.appName = aName;
+            saveDataToStorage();
+            document.getElementById('headerProjectName').innerText = aName;
+            closeSettingsModal();
+            showToast("تم حفظ الإعدادات");
+        }
+
+        // Export JSON Backup
+        function exportDataJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `restaurant_procurement_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("تم تصدير نسخة الاحتياط بنجاح");
+        }
+
+        // Helpers
+        function formatCurrency(amount) {
+            return Number(amount).toLocaleString('en-US') + ' د.ع';
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = message;
+            toast.classList.remove('translate-y-32', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-32', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
