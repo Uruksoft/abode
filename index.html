@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>إدارة المشتريات وقائمة الشراء</title>
+    <title>إدارة المشتريات والمصروفات</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts: Cairo -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Supabase JS SDK v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -65,25 +68,56 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
 
+    <!-- Loading Overlay -->
+    <div id="syncOverlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center hidden">
+        <div class="bg-white px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-bold text-slate-800">
+            <i class="fa-solid fa-spinner fa-spin text-emerald-600 text-lg"></i>
+            <span id="syncOverlayText">جاري مزامنة البيانات مع Supabase...</span>
+        </div>
+    </div>
+
     <!-- Header Navigation -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center space-x-3 space-x-reverse">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-200">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+            <div class="flex items-center space-x-3 space-x-reverse min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-200 shrink-0">
                     <i class="fa-solid fa-cart-shopping text-lg"></i>
                 </div>
-                <div>
-                    <h1 class="font-bold text-lg leading-tight text-slate-900" id="headerProjectName">نظام المشتريات وقائمة الشراء</h1>
-                    <p class="text-xs text-slate-500">إدارة المواد والتحاسب اليومي والشهري</p>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-bold text-base md:text-lg leading-tight text-slate-900 truncate" id="headerProjectName">نظام المشتريات وقائمة الشراء</h1>
+                        <span id="cloudStatusBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 shrink-0 hidden sm:inline-flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span>Supabase</span>
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500 truncate" id="headerSubtitle">إدارة المواد والمصروفات والتحاسب اليومي والشهري</p>
                 </div>
             </div>
             
-            <div class="flex items-center space-x-2 space-x-reverse">
-                <button onclick="openSettingsModal()" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition" title="إعدادات التطبيق">
-                    <i class="fa-solid fa-gear"></i>
+            <div class="flex items-center space-x-1.5 space-x-reverse shrink-0">
+                <!-- User Account Pill / Login Link -->
+                <div id="userAccountArea"></div>
+
+                <!-- Manual Refresh from Server -->
+                <button onclick="refreshFromServer()" class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 flex items-center justify-center transition" title="تحديث البيانات من السيرفر">
+                    <i class="fa-solid fa-rotate"></i>
                 </button>
-                <button onclick="exportDataJSON()" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition" title="نسخ احتياطي للبيانات">
+
+                <!-- Import JSON Backup -->
+                <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="importDataJSON(event)">
+                <button onclick="triggerImportJSON()" class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 flex items-center justify-center transition" title="استعادة نسخة احتياطية (JSON)">
+                    <i class="fa-solid fa-upload"></i>
+                </button>
+
+                <!-- Export JSON Backup -->
+                <button onclick="exportDataJSON()" class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition" title="تصدير نسخة احتياطية للبيانات">
                     <i class="fa-solid fa-download"></i>
+                </button>
+
+                <!-- Settings -->
+                <button onclick="openSettingsModal()" class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition" title="إعدادات التطبيق">
+                    <i class="fa-solid fa-gear"></i>
                 </button>
             </div>
         </div>
@@ -93,18 +127,22 @@
     <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-5 mb-24">
         
         <!-- Tabs Navigation -->
-        <div class="flex bg-slate-200/80 p-1.5 rounded-2xl mb-6 shadow-inner no-print overflow-x-auto">
-            <button onclick="switchTab('shopping')" id="tabBtn-shopping" class="flex-1 py-2.5 px-3 rounded-xl font-bold text-sm transition flex items-center justify-center space-x-2 space-x-reverse bg-white text-emerald-600 shadow-sm whitespace-nowrap">
+        <div class="flex bg-slate-200/80 p-1.5 rounded-2xl mb-6 shadow-inner no-print overflow-x-auto gap-1">
+            <button onclick="switchTab('shopping')" id="tabBtn-shopping" class="flex-1 py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm transition flex items-center justify-center space-x-2 space-x-reverse bg-white text-emerald-600 shadow-sm whitespace-nowrap">
                 <i class="fa-solid fa-basket-shopping"></i>
-                <span>قائمة الشراء الحالية</span>
+                <span>قائمة الشراء</span>
             </button>
-            <button onclick="switchTab('materials')" id="tabBtn-materials" class="flex-1 py-2.5 px-3 rounded-xl font-bold text-sm transition flex items-center justify-center space-x-2 space-x-reverse text-slate-600 hover:text-slate-900 whitespace-nowrap">
+            <button onclick="switchTab('expenses')" id="tabBtn-expenses" class="flex-1 py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm transition flex items-center justify-center space-x-2 space-x-reverse text-slate-600 hover:text-slate-900 whitespace-nowrap">
+                <i class="fa-solid fa-wallet"></i>
+                <span>المصروفات اليومية</span>
+            </button>
+            <button onclick="switchTab('materials')" id="tabBtn-materials" class="flex-1 py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm transition flex items-center justify-center space-x-2 space-x-reverse text-slate-600 hover:text-slate-900 whitespace-nowrap">
                 <i class="fa-solid fa-boxes-stacked"></i>
                 <span>إدارة المواد</span>
             </button>
-            <button onclick="switchTab('reports')" id="tabBtn-reports" class="flex-1 py-2.5 px-3 rounded-xl font-bold text-sm transition flex items-center justify-center space-x-2 space-x-reverse text-slate-600 hover:text-slate-900 whitespace-nowrap">
+            <button onclick="switchTab('reports')" id="tabBtn-reports" class="flex-1 py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm transition flex items-center justify-center space-x-2 space-x-reverse text-slate-600 hover:text-slate-900 whitespace-nowrap">
                 <i class="fa-solid fa-file-invoice-dollar"></i>
-                <span>سجل المشتريات والتقارير</span>
+                <span>السجل والتقارير</span>
             </button>
         </div>
 
@@ -150,7 +188,7 @@
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-xs font-semibold text-slate-600 mb-1">الكمية *</label>
-                        <input type="number" step="any" id="cartQty" required min="0.1" placeholder="1" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <input type="number" step="any" id="cartQty" required min="0.01" placeholder="1" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                     </div>
                     <div class="md:col-span-3">
                         <label class="block text-xs font-semibold text-slate-600 mb-1">السعر (للوحدة) *</label>
@@ -181,7 +219,113 @@
 
         </div>
 
-        <!-- TAB 2: MATERIALS MANAGEMENT -->
+        <!-- TAB 2: DAILY EXPENSES -->
+        <div id="tabContent-expenses" class="space-y-6 hidden">
+            
+            <!-- Daily Expenses Summary Card -->
+            <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-950 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden">
+                <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-amber-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs uppercase tracking-wider bg-white/10 px-3 py-1 rounded-full text-amber-300 font-semibold">ملخص المصروفات اليومية (التشغيلية والنثرية)</span>
+                    <i class="fa-solid fa-wallet text-amber-400 text-xl"></i>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                    <div>
+                        <span class="text-slate-300 text-xs block mb-1">مصروفات اليوم (<span id="todayDateDisplay"></span>)</span>
+                        <div class="text-3xl md:text-4xl font-black tracking-tight text-white" id="todayExpensesTotal">0 د.ع</div>
+                    </div>
+                    <div class="sm:text-left border-t sm:border-t-0 pt-3 sm:pt-0 border-white/10">
+                        <span class="text-slate-300 text-xs block mb-1">إجمالي المصروفات الكلي المسجل</span>
+                        <div class="text-xl font-bold text-amber-300" id="allExpensesTotal">0 د.ع</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Daily Expense Form -->
+            <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-bold text-slate-900 flex items-center space-x-2 space-x-reverse">
+                        <i class="fa-solid fa-circle-plus text-emerald-600"></i>
+                        <span>تسجيل مصروف يومي جديد</span>
+                    </h3>
+                    <span class="text-xs text-slate-400">نقل، أجور، فواتير، صيانة، نثريات...</span>
+                </div>
+
+                <form onsubmit="addExpense(event)" class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    <div class="md:col-span-4">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">بيان المصروف *</label>
+                        <input type="text" id="expTitle" required placeholder="مثلاً: أجور تكسي، غاز، صيانة..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">التصنيف *</label>
+                        <select id="expCategory" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="نقل وتوصيل">نقل وتوصيل</option>
+                            <option value="رواتب وأجور">رواتب وأجور</option>
+                            <option value="فواتير وخدمات">فواتير وخدمات (كهرباء/ماء/غاز)</option>
+                            <option value="صيانة ومعدات">صيانة ومعدات</option>
+                            <option value="إيجار">إيجار</option>
+                            <option value="نثريات وأخرى">نثريات وأخرى</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">المبلغ (د.ع) *</label>
+                        <input type="number" step="any" id="expAmount" required min="1" placeholder="0" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">التاريخ *</label>
+                        <input type="date" id="expDate" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div class="md:col-span-9">
+                        <input type="text" id="expNotes" placeholder="ملاحظات إضافية (اختياري)..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div class="md:col-span-3">
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-2xl transition text-sm shadow-md shadow-emerald-100 flex items-center justify-center space-x-1 space-x-reverse">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>حفظ المصروف</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Filter Expenses Bar -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="expenseSearchInput" oninput="renderExpensesList()" placeholder="بحث في المصروفات..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pr-9 pl-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <select id="expenseCategoryFilter" onchange="renderExpensesList()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="all">جميع التصنيفات</option>
+                        <option value="نقل وتوصيل">نقل وتوصيل</option>
+                        <option value="رواتب وأجور">رواتب وأجور</option>
+                        <option value="فواتير وخدمات">فواتير وخدمات</option>
+                        <option value="صيانة ومعدات">صيانة ومعدات</option>
+                        <option value="إيجار">إيجار</option>
+                        <option value="نثريات وأخرى">نثريات وأخرى</option>
+                    </select>
+                </div>
+                <div>
+                    <select id="expenseDateFilterMode" onchange="renderExpensesList()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="all">جميع التواريخ</option>
+                        <option value="today">مصروفات اليوم فقط</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Expenses List -->
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="font-bold text-slate-900">سجل المصروفات اليومية</h3>
+                    <span class="text-xs font-bold text-slate-500" id="filteredExpensesCount">0 سجل</span>
+                </div>
+                <div id="expensesListContainer" class="divide-y divide-slate-100">
+                    <!-- Dynamic Expenses -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TAB 3: MATERIALS MANAGEMENT -->
         <div id="tabContent-materials" class="space-y-6 hidden">
             
             <div class="flex items-center justify-between">
@@ -212,14 +356,14 @@
 
         </div>
 
-        <!-- TAB 3: REPORTS & ARCHIVE -->
+        <!-- TAB 4: REPORTS & ARCHIVE -->
         <div id="tabContent-reports" class="space-y-6 hidden">
             
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 no-print">
-                <h2 class="font-black text-xl text-slate-900 mb-1">سجل المشتريات والتحاسبات</h2>
-                <p class="text-xs text-slate-500 mb-5">عرض الأرشيف حسب التواريخ (يومي، أسبوعي، شهري) أو طباعة التقارير</p>
+                <h2 class="font-black text-xl text-slate-900 mb-1">سجل المشتريات والمصروفات والتقارير</h2>
+                <p class="text-xs text-slate-500 mb-5">عرض الأرشيف والمصروفات حسب التواريخ (يومي، أسبوعي، شهري) أو طباعة التقارير</p>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">من تاريخ</label>
                         <input type="date" id="reportStartDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
@@ -227,6 +371,14 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">إلى تاريخ</label>
                         <input type="date" id="reportEndDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">نوع التقرير</label>
+                        <select id="reportTypeFilter" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="all">شامل (المشتريات + المصروفات)</option>
+                            <option value="purchases">المشتريات المرحّلة فقط</option>
+                            <option value="expenses">المصروفات اليومية فقط</option>
+                        </select>
                     </div>
                 </div>
 
@@ -243,19 +395,38 @@
             </div>
 
             <!-- Report Results Box -->
-            <div id="reportResultContainer" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hidden space-y-4">
-                <div class="border-b border-slate-100 pb-4 flex justify-between items-center">
+            <div id="reportResultContainer" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hidden space-y-5">
+                <div class="border-b border-slate-100 pb-4 flex flex-wrap justify-between items-center gap-4">
                     <div>
-                        <h3 class="font-black text-lg text-slate-900" id="reportTitle">تقرير التحاسبات والمشتريات</h3>
+                        <h3 class="font-black text-lg text-slate-900" id="reportTitle">تقرير التحاسبات والمشتريات والمصروفات</h3>
                         <p class="text-xs text-slate-500" id="reportDateRangeText"></p>
                     </div>
                     <div class="text-left">
-                        <span class="text-xs text-slate-400 block">إجمالي الفترة</span>
-                        <span class="font-black text-emerald-600 text-lg" id="reportTotalAmount">0 د.ع</span>
+                        <span class="text-xs text-slate-400 block">الإجمالي الكلي للفترة</span>
+                        <span class="font-black text-emerald-600 text-xl" id="reportTotalAmount">0 د.ع</span>
                     </div>
                 </div>
+
+                <!-- Breakdown Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="reportSummaryCards">
+                    <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-100 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs text-emerald-700 font-semibold block">إجمالي المشتريات المرحّلة</span>
+                            <span class="font-black text-emerald-900 text-base" id="reportPurchasesSubtotal">0 د.ع</span>
+                        </div>
+                        <i class="fa-solid fa-cart-shopping text-emerald-500 text-lg"></i>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-100 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs text-amber-700 font-semibold block">إجمالي المصروفات اليومية</span>
+                            <span class="font-black text-amber-900 text-base" id="reportExpensesSubtotal">0 د.ع</span>
+                        </div>
+                        <i class="fa-solid fa-wallet text-amber-500 text-lg"></i>
+                    </div>
+                </div>
+
                 <div id="reportArchiveList" class="space-y-4">
-                    <!-- Dynamic archived checkout sessions -->
+                    <!-- Dynamic archived checkout sessions & expenses -->
                 </div>
             </div>
 
@@ -268,6 +439,97 @@
         <button onclick="switchTab('shopping')" class="w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xl flex items-center justify-center text-xl transition transform hover:scale-105 active:scale-95">
             <i class="fa-solid fa-basket-shopping"></i>
         </button>
+    </div>
+
+    <!-- MODAL: EDIT CART ITEM -->
+    <div id="editCartItemModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4 hidden">
+        <div class="bg-white w-full max-w-md rounded-t-3xl md:rounded-3xl p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="font-black text-xl text-slate-900">تعديل مادة في قائمة الشراء</h3>
+                <button onclick="closeEditCartItemModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form onsubmit="saveEditedCartItem(event)" class="space-y-4">
+                <input type="hidden" id="editCartItemId">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">اسم المادة</label>
+                    <input type="text" id="editCartItemName" readonly class="w-full bg-slate-100 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-600 font-bold">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">الكمية *</label>
+                        <input type="number" step="any" id="editCartItemQty" required min="0.01" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">السعر (للوحدة) *</label>
+                        <input type="number" step="any" id="editCartItemPrice" required min="0" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+                <div class="pt-3 flex gap-3">
+                    <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl transition text-sm shadow-lg shadow-emerald-200">
+                        حفظ التعديل
+                    </button>
+                    <button type="button" onclick="closeEditCartItemModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-6 py-3.5 rounded-2xl transition text-sm">
+                        إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT EXPENSE -->
+    <div id="editExpenseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4 hidden">
+        <div class="bg-white w-full max-w-md rounded-t-3xl md:rounded-3xl p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="font-black text-xl text-slate-900">تعديل المصروف</h3>
+                <button onclick="closeEditExpenseModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form onsubmit="saveEditedExpense(event)" class="space-y-4">
+                <input type="hidden" id="editExpId">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">بيان المصروف *</label>
+                    <input type="text" id="editExpTitle" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">التصنيف *</label>
+                    <select id="editExpCategory" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="نقل وتوصيل">نقل وتوصيل</option>
+                        <option value="رواتب وأجور">رواتب وأجور</option>
+                        <option value="فواتير وخدمات">فواتير وخدمات (كهرباء/ماء/غاز)</option>
+                        <option value="صيانة ومعدات">صيانة ومعدات</option>
+                        <option value="إيجار">إيجار</option>
+                        <option value="نثريات وأخرى">نثريات وأخرى</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">المبلغ (د.ع) *</label>
+                        <input type="number" step="any" id="editExpAmount" required min="1" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">التاريخ *</label>
+                        <input type="date" id="editExpDate" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">ملاحظات</label>
+                    <input type="text" id="editExpNotes" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div class="pt-3 flex gap-3">
+                    <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl transition text-sm shadow-lg shadow-emerald-200">
+                        حفظ التعديل
+                    </button>
+                    <button type="button" onclick="closeEditExpenseModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-6 py-3.5 rounded-2xl transition text-sm">
+                        إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- MODAL: ADD / EDIT MATERIAL -->
@@ -341,6 +603,20 @@
                     <input type="text" id="settingAppName" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
 
+                <div class="pt-2 border-t border-slate-100 space-y-2">
+                    <p class="text-xs font-semibold text-slate-600">النسخ الاحتياطي والاستعادة</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="exportDataJSON()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-download"></i>
+                            <span>تصدير البيانات</span>
+                        </button>
+                        <button type="button" onclick="triggerImportJSON()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-upload"></i>
+                            <span>استعادة نسخة</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="pt-3">
                     <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl transition text-sm shadow-lg shadow-emerald-200">
                         حفظ الإعدادات
@@ -358,64 +634,226 @@
 
     <!-- JavaScript Application Logic -->
     <script>
+        const LOCAL_FALLBACK_KEY = 'restaurant_procurement_data_v2';
+        const DEMO_SESSION_KEY = 'restaurant_procurement_demo_mode';
+
+        let currentUser = null;
+        let isCloudMode = false;
+
         // Default App State
         let appData = {
             appName: "نظام المشتريات وقائمة الشراء",
-            materials: [], // Defined items with units
-            activeCart: [], // Current shopping list items being added
-            archiveSessions: [] // Completed and checked out shopping sessions
+            materials: [],
+            activeCart: [],
+            archiveSessions: [],
+            expenses: []
         };
 
-        // Load from Local Storage on start
-        function loadData() {
-            const saved = localStorage.getItem('restaurant_procurement_data_v2');
-            if (saved) {
-                try {
-                    appData = JSON.parse(saved);
-                } catch(e) {
-                    console.error("Error loading data", e);
-                }
+        function getTodayISO() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function setSyncLoading(show, text = "جاري مزامنة البيانات مع Supabase...") {
+            const overlay = document.getElementById('syncOverlay');
+            document.getElementById('syncOverlayText').innerText = text;
+            if (show) {
+                overlay.classList.remove('hidden');
             } else {
-                // Initial demo data with new units
-                appData.materials = [
-                    { id: 'm1', name: 'طحين أصفر', unit: 'جيس', defaultPrice: 35000 },
-                    { id: 'm2', name: 'زيت نباتي', unit: 'تنكة', defaultPrice: 45000 },
-                    { id: 'm3', name: 'بيبسي عائلي', unit: 'كارتون', defaultPrice: 18000 },
-                    { id: 'm4', name: 'شاي أخضر', unit: 'بالة', defaultPrice: 12000 },
-                    { id: 'm5', name: 'مشروب غازي', unit: 'بطل', defaultPrice: 750 }
-                ];
-                appData.activeCart = [
-                    { id: 'c1', materialId: 'm1', name: 'طحين أصفر', unit: 'جيس', qty: 2, price: 35000 },
-                    { id: 'c2', materialId: 'm3', name: 'بيبسي عائلي', unit: 'كارتون', qty: 3, price: 18000 }
-                ];
-                saveDataToStorage();
+                overlay.classList.add('hidden');
             }
         }
 
-        function saveDataToStorage() {
-            localStorage.setItem('restaurant_procurement_data_v2', JSON.stringify(appData));
+        // Local Fallback Loader (for Demo / Offline Mode)
+        function loadLocalFallbackData() {
+            const saved = localStorage.getItem(LOCAL_FALLBACK_KEY);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    appData = {
+                        appName: parsed.appName || "نظام المشتريات وقائمة الشراء",
+                        materials: Array.isArray(parsed.materials) ? parsed.materials : [],
+                        activeCart: Array.isArray(parsed.activeCart) ? parsed.activeCart : [],
+                        archiveSessions: Array.isArray(parsed.archiveSessions) ? parsed.archiveSessions : [],
+                        expenses: Array.isArray(parsed.expenses) ? parsed.expenses : []
+                    };
+                    return;
+                } catch(e) {}
+            }
+            appData.materials = [
+                { id: 'm1', name: 'طحين أصفر', unit: 'جيس', defaultPrice: 35000 },
+                { id: 'm2', name: 'زيت نباتي', unit: 'تنكة', defaultPrice: 45000 },
+                { id: 'm3', name: 'بيبسي عائلي', unit: 'كارتون', defaultPrice: 18000 },
+                { id: 'm4', name: 'شاي أخضر', unit: 'بالة', defaultPrice: 12000 },
+                { id: 'm5', name: 'مشروب غازي', unit: 'بطل', defaultPrice: 750 }
+            ];
+            appData.activeCart = [];
+            appData.archiveSessions = [];
+            appData.expenses = [];
+            saveLocalFallbackData();
+        }
+
+        function saveLocalFallbackData() {
+            localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(appData));
+        }
+
+        // Load Data from Supabase Cloud
+        async function loadDataFromSupabase() {
+            if (!supabaseClient || !currentUser) return;
+            setSyncLoading(true, "جاري جلب البيانات من Supabase...");
+            try {
+                const [profileRes, matRes, cartRes, archiveRes, expRes] = await Promise.all([
+                    supabaseClient.from('profiles').select('*').eq('id', currentUser.id).maybeSingle(),
+                    supabaseClient.from('materials').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true }),
+                    supabaseClient.from('active_cart').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true }),
+                    supabaseClient.from('archive_sessions').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true }),
+                    supabaseClient.from('expenses').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true })
+                ]);
+
+                if (matRes.error) throw matRes.error;
+                if (cartRes.error) throw cartRes.error;
+                if (archiveRes.error) throw archiveRes.error;
+                if (expRes.error) throw expRes.error;
+
+                const metaProject = currentUser.user_metadata?.project_name;
+                appData.appName = profileRes.data?.project_name || metaProject || "نظام المشتريات وقائمة الشراء";
+
+                appData.materials = (matRes.data || []).map(m => ({
+                    id: m.id,
+                    name: m.name,
+                    unit: m.unit,
+                    defaultPrice: Number(m.default_price || 0)
+                }));
+
+                appData.activeCart = (cartRes.data || []).map(c => ({
+                    id: c.id,
+                    materialId: c.material_id,
+                    name: c.name,
+                    unit: c.unit,
+                    qty: Number(c.qty),
+                    price: Number(c.price)
+                }));
+
+                appData.archiveSessions = (archiveRes.data || []).map(s => ({
+                    id: s.id,
+                    date: s.date,
+                    timestamp: s.timestamp_label,
+                    items: Array.isArray(s.items) ? s.items : [],
+                    total: Number(s.total)
+                }));
+
+                appData.expenses = (expRes.data || []).map(ex => ({
+                    id: ex.id,
+                    title: ex.title,
+                    category: ex.category,
+                    amount: Number(ex.amount),
+                    date: ex.date,
+                    notes: ex.notes || ''
+                }));
+            } catch (err) {
+                console.error("Supabase load error:", err);
+                showToast("حدث خطأ أثناء جلب البيانات من السيرفر");
+            } finally {
+                setSyncLoading(false);
+            }
+        }
+
+        async function refreshFromServer() {
+            if (isCloudMode) {
+                await loadDataFromSupabase();
+                updateAllViews();
+                showToast("تم تحديث البيانات من Supabase");
+            } else {
+                loadLocalFallbackData();
+                updateAllViews();
+                showToast("تم تحديث البيانات المحلية");
+            }
+        }
+
+        // Auth State Rendering in Header
+        function renderUserSessionHeader() {
+            const container = document.getElementById('userAccountArea');
+            const badge = document.getElementById('cloudStatusBadge');
+
+            if (isCloudMode && currentUser) {
+                const displayName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.username || currentUser.email;
+                badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 shrink-0 hidden sm:inline-flex items-center gap-1";
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span>Supabase</span>`;
+
+                container.innerHTML = `
+                    <div class="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-xl">
+                        <span class="text-xs font-bold text-emerald-800 hidden sm:inline max-w-[100px] truncate">${escapeHtml(displayName)}</span>
+                        <button onclick="logoutUser()" class="text-rose-600 hover:text-rose-700 text-xs font-bold flex items-center gap-1" title="تسجيل الخروج">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span class="hidden md:inline">خروج</span>
+                        </button>
+                    </div>
+                `;
+            } else {
+                badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-bold border border-amber-200 shrink-0 hidden sm:inline-flex items-center gap-1";
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span>وضع محلي</span>`;
+
+                container.innerHTML = `
+                    <a href="login.html" class="h-9 md:h-10 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center gap-1.5 transition" title="تسجيل الدخول على Supabase">
+                        <i class="fa-solid fa-user"></i>
+                        <span class="hidden sm:inline">تسجيل الدخول</span>
+                    </a>
+                `;
+            }
+        }
+
+        async function logoutUser() {
+            if (!confirm("هل تريد تسجيل الخروج والانتقال إلى صفحة تسجيل الدخول؟")) return;
+            if (supabaseClient) {
+                await supabaseClient.auth.signOut();
+            }
+            localStorage.removeItem(DEMO_SESSION_KEY);
+            window.location.href = 'login.html';
         }
 
         // Initialize UI on load
-        window.onload = function() {
-            loadData();
+        window.onload = async function() {
+            const today = getTodayISO();
+            document.getElementById('expDate').value = today;
+            document.getElementById('todayDateDisplay').innerText = today;
+
+            const isDemo = localStorage.getItem(DEMO_SESSION_KEY) === 'true';
+
+            if (supabaseClient) {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session && session.user) {
+                    currentUser = session.user;
+                    isCloudMode = true;
+                    await loadDataFromSupabase();
+                } else if (!isDemo) {
+                    // توجيه المستخدم غير المسجل إلى صفحة تسجيل الدخول
+                    window.location.href = 'login.html';
+                    return;
+                } else {
+                    isCloudMode = false;
+                    loadLocalFallbackData();
+                }
+            } else {
+                isCloudMode = false;
+                loadLocalFallbackData();
+            }
+
+            renderUserSessionHeader();
             document.getElementById('headerProjectName').innerText = appData.appName;
             document.getElementById('settingAppName').value = appData.appName;
-
             updateAllViews();
         };
 
         // Tab Switcher
         function switchTab(tabId) {
-            ['shopping', 'materials', 'reports'].forEach(t => {
+            ['shopping', 'expenses', 'materials', 'reports'].forEach(t => {
                 document.getElementById(`tabContent-${t}`).classList.add('hidden');
                 const btn = document.getElementById(`tabBtn-${t}`);
-                btn.className = "flex-1 py-2.5 px-3 rounded-xl font-bold text-sm transition flex items-center justify-center space-x-2 space-x-reverse text-slate-600 hover:text-slate-900 whitespace-nowrap";
+                btn.className = "flex-1 py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm transition flex items-center justify-center space-x-2 space-x-reverse text-slate-600 hover:text-slate-900 whitespace-nowrap";
             });
 
             document.getElementById(`tabContent-${tabId}`).classList.remove('hidden');
             const activeBtn = document.getElementById(`tabBtn-${tabId}`);
-            activeBtn.className = "flex-1 py-2.5 px-3 rounded-xl font-bold text-sm transition flex items-center justify-center space-x-2 space-x-reverse bg-white text-emerald-600 shadow-sm whitespace-nowrap";
+            activeBtn.className = "flex-1 py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm transition flex items-center justify-center space-x-2 space-x-reverse bg-white text-emerald-600 shadow-sm whitespace-nowrap";
         }
 
         // Update All Views
@@ -423,6 +861,7 @@
             updateMaterialsDropdown();
             renderMaterialsList();
             renderCartList();
+            renderExpensesList();
         }
 
         // Update Materials Dropdown in Shopping tab
@@ -444,8 +883,10 @@
             document.getElementById('cartQty').value = '1';
         }
 
-        // Add Item to Current Cart
-        function addItemToCart(e) {
+        // ==========================================
+        // SHOPPING CART CRUD (SUPABASE + LOCAL)
+        // ==========================================
+        async function addItemToCart(e) {
             e.preventDefault();
             const select = document.getElementById('cartMaterialSelect');
             const matId = select.value;
@@ -457,27 +898,53 @@
             const qty = parseFloat(document.getElementById('cartQty').value);
             const price = parseFloat(document.getElementById('cartPrice').value);
 
-            const newItem = {
-                id: 'cart_' + Date.now(),
-                materialId: matId,
-                name: name,
-                unit: unit,
-                qty: qty,
-                price: price
-            };
+            if (isCloudMode) {
+                setSyncLoading(true, "جاري الإضافة...");
+                const { data, error } = await supabaseClient
+                    .from('active_cart')
+                    .insert([{
+                        user_id: currentUser.id,
+                        material_id: matId,
+                        name,
+                        unit,
+                        qty,
+                        price
+                    }])
+                    .select()
+                    .single();
+                setSyncLoading(false);
 
-            appData.activeCart.push(newItem);
-            saveDataToStorage();
+                if (error) {
+                    showToast("فشل الحفظ في السيرفر: " + error.message);
+                    return;
+                }
+                appData.activeCart.push({
+                    id: data.id,
+                    materialId: data.material_id,
+                    name: data.name,
+                    unit: data.unit,
+                    qty: Number(data.qty),
+                    price: Number(data.price)
+                });
+            } else {
+                appData.activeCart.push({
+                    id: 'cart_' + Date.now(),
+                    materialId: matId,
+                    name,
+                    unit,
+                    qty,
+                    price
+                });
+                saveLocalFallbackData();
+            }
+
             renderCartList();
-
-            // Reset form
             select.value = '';
             document.getElementById('cartQty').value = '';
             document.getElementById('cartPrice').value = '';
             showToast("تمت الإضافة لقائمة الشراء");
         }
 
-        // Render Cart List
         function renderCartList() {
             const container = document.getElementById('cartItemsList');
             container.innerHTML = '';
@@ -502,18 +969,21 @@
                 totalSum += itemTotal;
 
                 container.innerHTML += `
-                    <div class="p-4 hover:bg-slate-50 transition flex items-center justify-between gap-4">
-                        <div class="flex items-center space-x-3 space-x-reverse">
+                    <div class="p-4 hover:bg-slate-50 transition flex items-center justify-between gap-3">
+                        <div class="flex items-center space-x-3 space-x-reverse min-w-0">
                             <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                                 <span class="font-bold text-xs">${index + 1}</span>
                             </div>
-                            <div>
-                                <h4 class="font-bold text-slate-900 text-sm">${escapeHtml(item.name)}</h4>
+                            <div class="min-w-0">
+                                <h4 class="font-bold text-slate-900 text-sm truncate">${escapeHtml(item.name)}</h4>
                                 <p class="text-xs text-slate-500">الكمية: <span class="font-bold text-slate-700">${item.qty} ${item.unit}</span> × ${formatCurrency(item.price)}</p>
                             </div>
                         </div>
-                        <div class="flex items-center space-x-3 space-x-reverse shrink-0">
-                            <span class="font-black text-slate-900 text-sm md:text-base">${formatCurrency(itemTotal)}</span>
+                        <div class="flex items-center space-x-2 space-x-reverse shrink-0">
+                            <span class="font-black text-slate-900 text-sm md:text-base ml-1">${formatCurrency(itemTotal)}</span>
+                            <button onclick="openEditCartItemModal('${item.id}')" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition" title="تعديل الكمية أو السعر">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
                             <button onclick="removeCartItem('${item.id}')" class="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition" title="حذف من القائمة">
                                 <i class="fa-solid fa-trash text-xs"></i>
                             </button>
@@ -526,48 +996,366 @@
             document.getElementById('activeCartCount').innerText = count + ' مواد';
         }
 
-        function removeCartItem(id) {
-            appData.activeCart = appData.activeCart.filter(i => i.id !== id);
-            saveDataToStorage();
-            renderCartList();
-            showToast("تمت ازالة المادة");
+        function openEditCartItemModal(id) {
+            const item = appData.activeCart.find(i => i.id === id);
+            if (!item) return;
+            document.getElementById('editCartItemId').value = item.id;
+            document.getElementById('editCartItemName').value = `${item.name} (${item.unit})`;
+            document.getElementById('editCartItemQty').value = item.qty;
+            document.getElementById('editCartItemPrice').value = item.price;
+            document.getElementById('editCartItemModal').classList.remove('hidden');
         }
 
-        function clearCart() {
-            if (confirm("هل أنت متأكد من تفريغ قائمة الشراء الحالية؟")) {
-                appData.activeCart = [];
-                saveDataToStorage();
-                renderCartList();
-                showToast("تم تفريغ القائمة");
+        function closeEditCartItemModal() {
+            document.getElementById('editCartItemModal').classList.add('hidden');
+        }
+
+        async function saveEditedCartItem(e) {
+            e.preventDefault();
+            const id = document.getElementById('editCartItemId').value;
+            const qty = parseFloat(document.getElementById('editCartItemQty').value);
+            const price = parseFloat(document.getElementById('editCartItemPrice').value);
+
+            if (isCloudMode) {
+                setSyncLoading(true, "جاري تحديث المادة...");
+                const { error } = await supabaseClient
+                    .from('active_cart')
+                    .update({ qty, price })
+                    .eq('id', id)
+                    .eq('user_id', currentUser.id);
+                setSyncLoading(false);
+
+                if (error) {
+                    showToast("خطأ في التحديث: " + error.message);
+                    return;
+                }
             }
+
+            const idx = appData.activeCart.findIndex(i => i.id === id);
+            if (idx !== -1) {
+                appData.activeCart[idx].qty = qty;
+                appData.activeCart[idx].price = price;
+                if (!isCloudMode) saveLocalFallbackData();
+                renderCartList();
+                showToast("تم تعديل المادة بنجاح");
+            }
+            closeEditCartItemModal();
         }
 
-        // Checkout Cart (End of day/week/month calculation and archive)
-        function checkoutCart() {
+        async function removeCartItem(id) {
+            if (isCloudMode) {
+                setSyncLoading(true, "جاري الحذف...");
+                const { error } = await supabaseClient
+                    .from('active_cart')
+                    .delete()
+                    .eq('id', id)
+                    .eq('user_id', currentUser.id);
+                setSyncLoading(false);
+
+                if (error) {
+                    showToast("تعذر الحذف: " + error.message);
+                    return;
+                }
+            }
+
+            appData.activeCart = appData.activeCart.filter(i => i.id !== id);
+            if (!isCloudMode) saveLocalFallbackData();
+            renderCartList();
+            showToast("تمت إزالة المادة");
+        }
+
+        async function clearCart() {
+            if (!confirm("هل أنت متأكد من تفريغ قائمة الشراء الحالية؟")) return;
+
+            if (isCloudMode) {
+                setSyncLoading(true, "جاري تفريغ القائمة...");
+                const { error } = await supabaseClient
+                    .from('active_cart')
+                    .delete()
+                    .eq('user_id', currentUser.id);
+                setSyncLoading(false);
+
+                if (error) {
+                    showToast("حدث خطأ: " + error.message);
+                    return;
+                }
+            }
+
+            appData.activeCart = [];
+            if (!isCloudMode) saveLocalFallbackData();
+            renderCartList();
+            showToast("تم تفريغ القائمة");
+        }
+
+        async function checkoutCart() {
             if (appData.activeCart.length === 0) {
                 showToast("قائمة الشراء فارغة بالفعل!");
                 return;
             }
 
-            if (confirm("هل تريد إتمام التحاسب وترحيل هذه القائمة إلى الأرشيف وتصفير قائمة الشراء لتبدأ من جديد؟")) {
-                const totalAmount = appData.activeCart.reduce((sum, i) => sum + (i.qty * i.price), 0);
-                const session = {
-                    id: 'session_' + Date.now(),
-                    date: new Date().toISOString().split('T')[0],
-                    timestamp: new Date().toLocaleString('ar-IQ'),
-                    items: [...appData.activeCart],
-                    total: totalAmount
-                };
+            if (!confirm("هل تريد إتمام التحاسب وترحيل هذه القائمة إلى الأرشيف وتصفير قائمة الشراء لتبدأ من جديد؟")) return;
 
-                appData.archiveSessions.push(session);
-                appData.activeCart = []; // Clear active cart
-                saveDataToStorage();
-                renderCartList();
-                showToast("تم التحاسب وترحيل المشتريات للأرشيف بنجاح!");
+            const totalAmount = appData.activeCart.reduce((sum, i) => sum + (i.qty * i.price), 0);
+            const dateStr = getTodayISO();
+            const timestampStr = new Date().toLocaleString('ar-IQ');
+            const itemsSnapshot = [...appData.activeCart];
+
+            if (isCloudMode) {
+                setSyncLoading(true, "جاري ترحيل التحاسب للأرشيف...");
+                const { data, error } = await supabaseClient
+                    .from('archive_sessions')
+                    .insert([{
+                        user_id: currentUser.id,
+                        date: dateStr,
+                        timestamp_label: timestampStr,
+                        items: itemsSnapshot,
+                        total: totalAmount
+                    }])
+                    .select()
+                    .single();
+
+                if (error) {
+                    setSyncLoading(false);
+                    showToast("فشل ترحيل القائمة: " + error.message);
+                    return;
+                }
+
+                await supabaseClient
+                    .from('active_cart')
+                    .delete()
+                    .eq('user_id', currentUser.id);
+
+                setSyncLoading(false);
+
+                appData.archiveSessions.push({
+                    id: data.id,
+                    date: data.date,
+                    timestamp: data.timestamp_label,
+                    items: data.items,
+                    total: Number(data.total)
+                });
+            } else {
+                appData.archiveSessions.push({
+                    id: 'session_' + Date.now(),
+                    date: dateStr,
+                    timestamp: timestampStr,
+                    items: itemsSnapshot,
+                    total: totalAmount
+                });
             }
+
+            appData.activeCart = [];
+            if (!isCloudMode) saveLocalFallbackData();
+            renderCartList();
+            showToast("تم التحاسب وترحيل المشتريات للأرشيف بنجاح!");
         }
 
-        // Materials Management Logic
+        // ==========================================
+        // DAILY EXPENSES LOGIC (SUPABASE + LOCAL)
+        // ==========================================
+        async function addExpense(e) {
+            e.preventDefault();
+            const title = document.getElementById('expTitle').value.trim();
+            const category = document.getElementById('expCategory').value;
+            const amount = parseFloat(document.getElementById('expAmount').value);
+            const date = document.getElementById('expDate').value || getTodayISO();
+            const notes = document.getElementById('expNotes').value.trim();
+
+            if (isCloudMode) {
+                setSyncLoading(true, "جاري تسجيل المصروف...");
+                const { data, error } = await supabaseClient
+                    .from('expenses')
+                    .insert([{
+                        user_id: currentUser.id,
+                        title,
+                        category,
+                        amount,
+                        date,
+                        notes
+                    }])
+                    .select()
+                    .single();
+                setSyncLoading(false);
+
+                if (error) {
+                    showToast("خطأ في الحفظ: " + error.message);
+                    return;
+                }
+
+                appData.expenses.push({
+                    id: data.id,
+                    title: data.title,
+                    category: data.category,
+                    amount: Number(data.amount),
+                    date: data.date,
+                    notes: data.notes || ''
+                });
+            } else {
+                appData.expenses.push({
+                    id: 'exp_' + Date.now(),
+                    title,
+                    category,
+                    amount,
+                    date,
+                    notes
+                });
+                saveLocalFallbackData();
+            }
+
+            renderExpensesList();
+            document.getElementById('expTitle').value = '';
+            document.getElementById('expAmount').value = '';
+            document.getElementById('expNotes').value = '';
+            document.getElementById('expDate').value = getTodayISO();
+            showToast("تم تسجيل المصروف بنجاح");
+        }
+
+        function renderExpensesList() {
+            const container = document.getElementById('expensesListContainer');
+            const search = document.getElementById('expenseSearchInput').value.toLowerCase();
+            const catFilter = document.getElementById('expenseCategoryFilter').value;
+            const dateMode = document.getElementById('expenseDateFilterMode').value;
+            const today = getTodayISO();
+
+            const todayTotal = appData.expenses
+                .filter(ex => ex.date === today)
+                .reduce((sum, ex) => sum + ex.amount, 0);
+            const allTotal = appData.expenses
+                .reduce((sum, ex) => sum + ex.amount, 0);
+
+            document.getElementById('todayExpensesTotal').innerText = formatCurrency(todayTotal);
+            document.getElementById('allExpensesTotal').innerText = formatCurrency(allTotal);
+
+            let filtered = appData.expenses.filter(ex => {
+                const matchesSearch = ex.title.toLowerCase().includes(search) || (ex.notes && ex.notes.toLowerCase().includes(search));
+                const matchesCat = catFilter === 'all' || ex.category === catFilter;
+                const matchesDate = dateMode === 'all' || ex.date === today;
+                return matchesSearch && matchesCat && matchesDate;
+            });
+
+            const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date));
+            document.getElementById('filteredExpensesCount').innerText = `${sorted.length} سجل`;
+
+            container.innerHTML = '';
+            if (sorted.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 px-4">
+                        <i class="fa-solid fa-wallet text-slate-300 text-4xl mb-3"></i>
+                        <p class="text-slate-500 font-medium text-sm">لا توجد مصروفات مطابقة للبحث</p>
+                    </div>
+                `;
+                return;
+            }
+
+            sorted.forEach(exp => {
+                container.innerHTML += `
+                    <div class="p-4 hover:bg-slate-50 transition flex items-center justify-between gap-3">
+                        <div class="flex items-center space-x-3 space-x-reverse min-w-0">
+                            <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-money-bill-wave text-sm"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="font-bold text-slate-900 text-sm truncate">${escapeHtml(exp.title)}</h4>
+                                <div class="flex flex-wrap items-center gap-2 mt-0.5">
+                                    <span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-lg font-bold">${escapeHtml(exp.category)}</span>
+                                    <span class="text-xs text-slate-400"><i class="fa-regular fa-calendar ml-1"></i>${exp.date}</span>
+                                    ${exp.notes ? `<span class="text-xs text-slate-500 truncate max-w-[180px]">• ${escapeHtml(exp.notes)}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2 space-x-reverse shrink-0">
+                            <span class="font-black text-slate-900 text-sm md:text-base ml-1">${formatCurrency(exp.amount)}</span>
+                            <button onclick="openEditExpenseModal('${exp.id}')" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition" title="تعديل المصروف">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteExpense('${exp.id}')" class="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition" title="حذف المصروف">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openEditExpenseModal(id) {
+            const exp = appData.expenses.find(e => e.id === id);
+            if (!exp) return;
+            document.getElementById('editExpId').value = exp.id;
+            document.getElementById('editExpTitle').value = exp.title;
+            document.getElementById('editExpCategory').value = exp.category;
+            document.getElementById('editExpAmount').value = exp.amount;
+            document.getElementById('editExpDate').value = exp.date;
+            document.getElementById('editExpNotes').value = exp.notes || '';
+            document.getElementById('editExpenseModal').classList.remove('hidden');
+        }
+
+        function closeEditExpenseModal() {
+            document.getElementById('editExpenseModal').classList.add('hidden');
+        }
+
+        async function saveEditedExpense(e) {
+            e.preventDefault();
+            const id = document.getElementById('editExpId').value;
+            const updatedObj = {
+                title: document.getElementById('editExpTitle').value.trim(),
+                category: document.getElementById('editExpCategory').value,
+                amount: parseFloat(document.getElementById('editExpAmount').value),
+                date: document.getElementById('editExpDate').value,
+                notes: document.getElementById('editExpNotes').value.trim()
+            };
+
+            if (isCloudMode) {
+                setSyncLoading(true, "جاري تحديث المصروف...");
+                const { error } = await supabaseClient
+                    .from('expenses')
+                    .update(updatedObj)
+                    .eq('id', id)
+                    .eq('user_id', currentUser.id);
+                setSyncLoading(false);
+
+                if (error) {
+                    showToast("فشل التعديل: " + error.message);
+                    return;
+                }
+            }
+
+            const idx = appData.expenses.findIndex(ex => ex.id === id);
+            if (idx !== -1) {
+                appData.expenses[idx] = { id, ...updatedObj };
+                if (!isCloudMode) saveLocalFallbackData();
+                renderExpensesList();
+                showToast("تم تحديث المصروف بنجاح");
+            }
+            closeEditExpenseModal();
+        }
+
+        async function deleteExpense(id) {
+            if (!confirm("هل أنت متأكد من حذف هذا المصروف؟")) return;
+
+            if (isCloudMode) {
+                setSyncLoading(true, "جاري حذف المصروف...");
+                const { error } = await supabaseClient
+                    .from('expenses')
+                    .delete()
+                    .eq('id', id)
+                    .eq('user_id', currentUser.id);
+                setSyncLoading(false);
+
+                if (error) {
+                    showToast("تعذر الحذف: " + error.message);
+                    return;
+                }
+            }
+
+            appData.expenses = appData.expenses.filter(ex => ex.id !== id);
+            if (!isCloudMode) saveLocalFallbackData();
+            renderExpensesList();
+            showToast("تم حذف المصروف");
+        }
+
+        // ==========================================
+        // MATERIALS MANAGEMENT LOGIC (SUPABASE + LOCAL)
+        // ==========================================
         function renderMaterialsList() {
             const search = document.getElementById('materialSearchInput').value.toLowerCase();
             const container = document.getElementById('materialsListContainer');
@@ -635,7 +1423,7 @@
             document.getElementById('materialModal').classList.add('hidden');
         }
 
-        function saveMaterial(e) {
+        async function saveMaterial(e) {
             e.preventDefault();
             const id = document.getElementById('materialId').value;
             const name = document.getElementById('matName').value.trim();
@@ -643,23 +1431,62 @@
             const defaultPrice = parseFloat(document.getElementById('matDefaultPrice').value) || 0;
 
             if (id) {
+                if (isCloudMode) {
+                    setSyncLoading(true, "جاري تحديث المادة...");
+                    const { error } = await supabaseClient
+                        .from('materials')
+                        .update({ name, unit, default_price: defaultPrice })
+                        .eq('id', id)
+                        .eq('user_id', currentUser.id);
+                    setSyncLoading(false);
+
+                    if (error) {
+                        showToast("خطأ في التحديث: " + error.message);
+                        return;
+                    }
+                }
                 const index = appData.materials.findIndex(m => m.id === id);
                 if (index !== -1) {
                     appData.materials[index] = { id, name, unit, defaultPrice };
                 }
                 showToast("تم تحديث المادة بنجاح");
             } else {
-                const newMat = {
-                    id: 'mat_' + Date.now(),
-                    name,
-                    unit,
-                    defaultPrice
-                };
-                appData.materials.push(newMat);
+                if (isCloudMode) {
+                    setSyncLoading(true, "جاري حفظ المادة...");
+                    const { data, error } = await supabaseClient
+                        .from('materials')
+                        .insert([{
+                            user_id: currentUser.id,
+                            name,
+                            unit,
+                            default_price: defaultPrice
+                        }])
+                        .select()
+                        .single();
+                    setSyncLoading(false);
+
+                    if (error) {
+                        showToast("خطأ في الإضافة: " + error.message);
+                        return;
+                    }
+                    appData.materials.push({
+                        id: data.id,
+                        name: data.name,
+                        unit: data.unit,
+                        defaultPrice: Number(data.default_price || 0)
+                    });
+                } else {
+                    appData.materials.push({
+                        id: 'mat_' + Date.now(),
+                        name,
+                        unit,
+                        defaultPrice
+                    });
+                }
                 showToast("تم إضافة المادة بنجاح");
             }
 
-            saveDataToStorage();
+            if (!isCloudMode) saveLocalFallbackData();
             updateAllViews();
             closeMaterialModal();
         }
@@ -668,41 +1495,73 @@
             openMaterialModal(id);
         }
 
-        function deleteMaterial(id) {
-            if (confirm("هل أنت متأكد من حذف هذه المادة؟")) {
-                appData.materials = appData.materials.filter(m => m.id !== id);
-                saveDataToStorage();
-                updateAllViews();
-                showToast("تم حذف المادة");
+        async function deleteMaterial(id) {
+            if (!confirm("هل أنت متأكد من حذف هذه المادة؟")) return;
+
+            if (isCloudMode) {
+                setSyncLoading(true, "جاري الحذف...");
+                const { error } = await supabaseClient
+                    .from('materials')
+                    .delete()
+                    .eq('id', id)
+                    .eq('user_id', currentUser.id);
+                setSyncLoading(false);
+
+                if (error) {
+                    showToast("تعذر الحذف: " + error.message);
+                    return;
+                }
             }
+
+            appData.materials = appData.materials.filter(m => m.id !== id);
+            if (!isCloudMode) saveLocalFallbackData();
+            updateAllViews();
+            showToast("تم حذف المادة");
         }
 
-        // Reports & Archive Generation
+        // ==========================================
+        // REPORTS & ARCHIVE GENERATION
+        // ==========================================
         function generateReport() {
             const startDate = document.getElementById('reportStartDate').value;
             const endDate = document.getElementById('reportEndDate').value;
+            const reportType = document.getElementById('reportTypeFilter').value;
 
             let filteredSessions = appData.archiveSessions;
+            let filteredExpenses = appData.expenses;
+
             if (startDate) {
                 filteredSessions = filteredSessions.filter(s => s.date >= startDate);
+                filteredExpenses = filteredExpenses.filter(ex => ex.date >= startDate);
             }
             if (endDate) {
                 filteredSessions = filteredSessions.filter(s => s.date <= endDate);
+                filteredExpenses = filteredExpenses.filter(ex => ex.date <= endDate);
             }
 
-            const totalSum = filteredSessions.reduce((sum, s) => sum + s.total, 0);
+            const purchasesSum = (reportType === 'all' || reportType === 'purchases')
+                ? filteredSessions.reduce((sum, s) => sum + s.total, 0)
+                : 0;
+            const expensesSum = (reportType === 'all' || reportType === 'expenses')
+                ? filteredExpenses.reduce((sum, ex) => sum + ex.amount, 0)
+                : 0;
+            const grandTotal = purchasesSum + expensesSum;
 
-            document.getElementById('reportTitle').innerText = `تقرير المشتريات والتحاسبات (${appData.appName})`;
+            document.getElementById('reportTitle').innerText = `تقرير المشتريات والمصروفات (${appData.appName})`;
             document.getElementById('reportDateRangeText').innerText = startDate || endDate ? `الفترة من: ${startDate || 'البداية'} إلى: ${endDate || 'اليوم'}` : `جميع العمليات والأرشيف`;
-            document.getElementById('reportTotalAmount').innerText = formatCurrency(totalSum);
+            document.getElementById('reportPurchasesSubtotal').innerText = formatCurrency(purchasesSum);
+            document.getElementById('reportExpensesSubtotal').innerText = formatCurrency(expensesSum);
+            document.getElementById('reportTotalAmount').innerText = formatCurrency(grandTotal);
 
             const container = document.getElementById('reportArchiveList');
             container.innerHTML = '';
 
-            if (filteredSessions.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">لا توجد سجلات تحاسب في هذه الفترة</p>`;
-            } else {
-                filteredSessions.reverse().forEach(session => {
+            let hasContent = false;
+
+            if ((reportType === 'all' || reportType === 'purchases') && filteredSessions.length > 0) {
+                hasContent = true;
+                container.innerHTML += `<h4 class="font-bold text-slate-800 text-sm pt-2 flex items-center gap-2"><i class="fa-solid fa-cart-shopping text-emerald-600"></i><span>سجل قوائم المشتريات المرحّلة (${filteredSessions.length})</span></h4>`;
+                [...filteredSessions].reverse().forEach(session => {
                     let itemsHtml = '';
                     session.items.forEach(it => {
                         itemsHtml += `
@@ -727,6 +1586,33 @@
                 });
             }
 
+            if ((reportType === 'all' || reportType === 'expenses') && filteredExpenses.length > 0) {
+                hasContent = true;
+                container.innerHTML += `<h4 class="font-bold text-slate-800 text-sm pt-3 flex items-center gap-2"><i class="fa-solid fa-wallet text-amber-600"></i><span>سجل المصروفات اليومية (${filteredExpenses.length})</span></h4>`;
+                let expRowsHtml = '';
+                [...filteredExpenses].reverse().forEach(ex => {
+                    expRowsHtml += `
+                        <div class="flex justify-between items-center text-xs text-slate-700 py-2 border-b border-slate-200 last:border-none">
+                            <div>
+                                <span class="font-bold text-slate-900">${escapeHtml(ex.title)}</span>
+                                <span class="text-slate-500 mr-1">(${escapeHtml(ex.category)} • ${ex.date})</span>
+                                ${ex.notes ? `<span class="text-slate-400 block">${escapeHtml(ex.notes)}</span>` : ''}
+                            </div>
+                            <span class="font-black text-amber-700">${formatCurrency(ex.amount)}</span>
+                        </div>
+                    `;
+                });
+                container.innerHTML += `
+                    <div class="p-4 rounded-2xl bg-amber-50/40 border border-amber-200/70 space-y-1">
+                        ${expRowsHtml}
+                    </div>
+                `;
+            }
+
+            if (!hasContent) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">لا توجد سجلات مشتريات أو مصروفات في هذه الفترة</p>`;
+            }
+
             document.getElementById('reportResultContainer').classList.remove('hidden');
         }
 
@@ -739,26 +1625,156 @@
             document.getElementById('settingsModal').classList.add('hidden');
         }
 
-        function saveSettings(e) {
+        async function saveSettings(e) {
             e.preventDefault();
             const aName = document.getElementById('settingAppName').value.trim();
+
+            if (isCloudMode) {
+                setSyncLoading(true, "جاري حفظ الإعدادات...");
+                const { error } = await supabaseClient
+                    .from('profiles')
+                    .upsert({
+                        id: currentUser.id,
+                        project_name: aName,
+                        updated_at: new Date().toISOString()
+                    });
+                setSyncLoading(false);
+
+                if (error) {
+                    showToast("فشل الحفظ: " + error.message);
+                    return;
+                }
+            }
+
             appData.appName = aName;
-            saveDataToStorage();
+            if (!isCloudMode) saveLocalFallbackData();
             document.getElementById('headerProjectName').innerText = aName;
             closeSettingsModal();
             showToast("تم حفظ الإعدادات");
         }
 
-        // Export JSON Backup
+        // Export & Import JSON Backup (with Supabase Sync Support)
         function exportDataJSON() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `restaurant_procurement_${new Date().toISOString().split('T')[0]}.json`);
+            downloadAnchor.setAttribute("download", `restaurant_procurement_${getTodayISO()}.json`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
             showToast("تم تصدير نسخة الاحتياط بنجاح");
+        }
+
+        function triggerImportJSON() {
+            document.getElementById('importFileInput').click();
+        }
+
+        function importDataJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (!imported || typeof imported !== 'object' || !Array.isArray(imported.materials)) {
+                        throw new Error("صيغة الملف غير صالحة");
+                    }
+                    if (!confirm("سيتم استبدال البيانات الحالية بالبيانات الموجودة في ملف النسخة الاحتياطية ومزامنتها. هل تريد المتابعة؟")) {
+                        return;
+                    }
+
+                    const newAppName = imported.appName || appData.appName;
+                    const newMaterials = imported.materials || [];
+                    const newCart = Array.isArray(imported.activeCart) ? imported.activeCart : [];
+                    const newArchive = Array.isArray(imported.archiveSessions) ? imported.archiveSessions : [];
+                    const newExpenses = Array.isArray(imported.expenses) ? imported.expenses : [];
+
+                    if (isCloudMode) {
+                        setSyncLoading(true, "جاري رفع النسخة الاحتياطية إلى Supabase...");
+                        await Promise.all([
+                            supabaseClient.from('active_cart').delete().eq('user_id', currentUser.id),
+                            supabaseClient.from('archive_sessions').delete().eq('user_id', currentUser.id),
+                            supabaseClient.from('expenses').delete().eq('user_id', currentUser.id),
+                            supabaseClient.from('materials').delete().eq('user_id', currentUser.id)
+                        ]);
+
+                        await supabaseClient.from('profiles').upsert({
+                            id: currentUser.id,
+                            project_name: newAppName,
+                            updated_at: new Date().toISOString()
+                        });
+
+                        if (newMaterials.length > 0) {
+                            await supabaseClient.from('materials').insert(
+                                newMaterials.map(m => ({
+                                    user_id: currentUser.id,
+                                    name: m.name,
+                                    unit: m.unit,
+                                    default_price: m.defaultPrice || 0
+                                }))
+                            );
+                        }
+                        if (newCart.length > 0) {
+                            await supabaseClient.from('active_cart').insert(
+                                newCart.map(c => ({
+                                    user_id: currentUser.id,
+                                    name: c.name,
+                                    unit: c.unit,
+                                    qty: c.qty,
+                                    price: c.price
+                                }))
+                            );
+                        }
+                        if (newArchive.length > 0) {
+                            await supabaseClient.from('archive_sessions').insert(
+                                newArchive.map(s => ({
+                                    user_id: currentUser.id,
+                                    date: s.date,
+                                    timestamp_label: s.timestamp,
+                                    items: s.items || [],
+                                    total: s.total || 0
+                                }))
+                            );
+                        }
+                        if (newExpenses.length > 0) {
+                            await supabaseClient.from('expenses').insert(
+                                newExpenses.map(ex => ({
+                                    user_id: currentUser.id,
+                                    title: ex.title,
+                                    category: ex.category,
+                                    amount: ex.amount,
+                                    date: ex.date,
+                                    notes: ex.notes || ''
+                                }))
+                            );
+                        }
+
+                        await loadDataFromSupabase();
+                        setSyncLoading(false);
+                    } else {
+                        appData = {
+                            appName: newAppName,
+                            materials: newMaterials,
+                            activeCart: newCart,
+                            archiveSessions: newArchive,
+                            expenses: newExpenses
+                        };
+                        saveLocalFallbackData();
+                    }
+
+                    document.getElementById('headerProjectName').innerText = appData.appName;
+                    document.getElementById('settingAppName').value = appData.appName;
+                    updateAllViews();
+                    showToast("تمت استعادة النسخة الاحتياطية بنجاح!");
+                } catch (err) {
+                    setSyncLoading(false);
+                    alert("تعذر قراءة أو رفع الملف: " + err.message);
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
         }
 
         // Helpers
@@ -768,7 +1784,7 @@
 
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
         function showToast(message) {
