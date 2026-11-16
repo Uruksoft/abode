@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daggan-app-v6';
+const CACHE_NAME = 'daggan-app-v8';
 const assetsToCache = [
   './',
   './index.html',
@@ -7,6 +7,14 @@ const assetsToCache = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
+];
+
+const CACHEABLE_EXTERNAL_HOSTS = [
+  'cdn.tailwindcss.com',
+  'cdnjs.cloudflare.com',
+  'fonts.googleapis.com',
+  'fonts.gstatic.com',
+  'cdn.jsdelivr.net'
 ];
 
 self.addEventListener('install', (event) => {
@@ -29,10 +37,17 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  const isSameOrigin = url.origin === self.location.origin;
+  const isCacheableCdn = CACHEABLE_EXTERNAL_HOSTS.some((host) => url.hostname.includes(host));
+
+  if (!isSameOrigin && !isCacheableCdn) return;
+
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        if (networkResponse && networkResponse.ok && event.request.url.startsWith(self.location.origin)) {
+        if (networkResponse && (networkResponse.ok || networkResponse.type === 'opaque')) {
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
         }

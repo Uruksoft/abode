@@ -48,19 +48,32 @@
         }
     </script>
     <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        button, a, input, select, label {
+            touch-action: manipulation;
+        }
         html, body {
             width: 100%;
             max-width: 100%;
             overflow-x: hidden;
             font-family: 'Cairo', sans-serif;
-            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: contain;
         }
         input, button {
             font-size: 16px !important;
         }
+        .safe-area-pad {
+            padding-top: max(1rem, env(safe-area-inset-top, 1rem));
+            padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 1.5rem));
+        }
+        @media print {
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
-<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-[100dvh] flex items-center justify-center p-4 antialiased selection:bg-emerald-500 selection:text-white">
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-[100dvh] flex flex-col px-4 safe-area-pad antialiased selection:bg-emerald-500 selection:text-white">
 
     <!-- Background Decorative Blobs -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
@@ -69,11 +82,11 @@
     </div>
 
     <!-- Main Auth Card -->
-    <div class="w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden relative z-10">
+    <div class="w-full max-w-md my-auto mx-auto bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden relative z-10">
         
         <!-- Top Brand Header -->
-        <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white p-7 text-center relative overflow-hidden">
-            <button type="button" onclick="toggleLoginTheme()" class="absolute top-4 left-4 w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 flex items-center justify-center transition" title="تبديل المظهر">
+        <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white p-6 sm:p-7 text-center relative overflow-hidden">
+            <button type="button" onclick="toggleLoginTheme()" class="absolute top-4 left-4 w-10 h-10 rounded-xl bg-white/10 active:scale-95 text-slate-200 flex items-center justify-center transition" title="تبديل المظهر">
                 <i id="loginThemeIcon" class="fa-solid fa-moon text-sm"></i>
             </button>
             <div class="absolute -left-8 -bottom-8 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
@@ -111,7 +124,7 @@
 
         <!-- Error / Alert Box -->
         <div id="authAlert" class="mx-6 mt-4 p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold hidden flex items-center gap-2">
-            <i class="fa-solid fa-circle-exclamation text-sm"></i>
+            <i class="fa-solid fa-circle-exclamation text-sm shrink-0"></i>
             <span id="authAlertText"></span>
         </div>
 
@@ -121,7 +134,7 @@
                 <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">البريد الإلكتروني أو اسم المستخدم *</label>
                 <div class="relative">
                     <i class="fa-solid fa-user absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input type="text" id="loginUsername" required placeholder="أدخل البريد أو اسم المستخدم..." class="w-full bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl pr-11 pl-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <input type="text" id="loginUsername" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="أدخل البريد أو اسم المستخدم..." class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl pr-11 pl-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
             </div>
 
@@ -129,20 +142,20 @@
                 <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">كلمة المرور *</label>
                 <div class="relative">
                     <i class="fa-solid fa-lock absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl pr-11 pl-11 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    <button type="button" onclick="togglePasswordVisibility('loginPassword', 'loginEyeIcon')" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <input type="password" id="loginPassword" autocomplete="current-password" required placeholder="••••••••" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl pr-11 pl-11 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <button type="button" onclick="togglePasswordVisibility('loginPassword', 'loginEyeIcon')" class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                         <i id="loginEyeIcon" class="fa-solid fa-eye text-sm"></i>
                     </button>
                 </div>
             </div>
 
-            <button type="submit" id="loginSubmitBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl transition text-sm shadow-lg shadow-emerald-200 dark:shadow-none flex items-center justify-center gap-2">
+            <button type="submit" id="loginSubmitBtn" class="w-full min-h-[48px] bg-emerald-600 active:scale-[0.99] hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl transition text-sm shadow-lg shadow-emerald-200 dark:shadow-none flex items-center justify-center gap-2">
                 <i class="fa-solid fa-right-to-bracket"></i>
                 <span>دخول للنظام</span>
             </button>
 
             <div class="pt-2 border-t border-slate-100 dark:border-slate-700 text-center">
-                <button type="button" onclick="demoLogin()" class="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition">
+                <button type="button" onclick="demoLogin()" class="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition py-1">
                     أو الدخول بدون إنترنت (وضع محلي تجريبي) ←
                 </button>
             </div>
@@ -154,7 +167,7 @@
                 <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">الاسم الكامل *</label>
                 <div class="relative">
                     <i class="fa-solid fa-id-card absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input type="text" id="regFullName" required placeholder="مثلاً: مرتضى حسين" class="w-full bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl pr-11 pl-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <input type="text" id="regFullName" required placeholder="مثلاً: مرتضى حسين" class="w-full min-h-[46px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl pr-11 pl-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
             </div>
 
@@ -162,7 +175,7 @@
                 <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">اسم المطعم / المشروع *</label>
                 <div class="relative">
                     <i class="fa-solid fa-store absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input type="text" id="regProjectName" required placeholder="مثلاً: مطعم دُگّان" class="w-full bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl pr-11 pl-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <input type="text" id="regProjectName" required placeholder="مثلاً: مطعم دُگّان" class="w-full min-h-[46px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl pr-11 pl-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
             </div>
 
@@ -170,22 +183,22 @@
                 <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">البريد الإلكتروني أو اسم المستخدم *</label>
                 <div class="relative">
                     <i class="fa-solid fa-user absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input type="text" id="regUsername" required placeholder="name@example.com أو اسم مستخدم" class="w-full bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl pr-11 pl-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <input type="text" id="regUsername" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="name@example.com أو اسم مستخدم" class="w-full min-h-[46px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl pr-11 pl-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
             </div>
 
-            <!-- ميزة رفع الصورة الشخصية -->
+            <!-- ميزة رفع الصورة الشخصية مع الضغط التلقائي -->
             <div>
                 <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">الصورة الشخصية (اختياري)</label>
-                <input type="file" id="regAvatar" accept="image/*" class="w-full bg-slate-50 dark:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 rounded-2xl px-3 py-2 text-xs file:mr-4 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 dark:file:bg-emerald-950 file:text-emerald-700 dark:file:text-emerald-300 hover:file:bg-emerald-100">
+                <input type="file" id="regAvatar" accept="image/*" class="w-full bg-slate-50 dark:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 rounded-2xl px-3 py-2 text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 dark:file:bg-emerald-950 file:text-emerald-700 dark:file:text-emerald-300">
             </div>
 
             <div>
                 <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">كلمة المرور *</label>
                 <div class="relative">
                     <i class="fa-solid fa-lock absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input type="password" id="regPassword" required minlength="6" placeholder="6 أحرف أو أرقام على الأقل" class="w-full bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl pr-11 pl-11 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    <button type="button" onclick="togglePasswordVisibility('regPassword', 'regEyeIcon1')" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <input type="password" id="regPassword" autocomplete="new-password" required minlength="6" placeholder="6 أحرف أو أرقام على الأقل" class="w-full min-h-[46px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl pr-11 pl-11 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <button type="button" onclick="togglePasswordVisibility('regPassword', 'regEyeIcon1')" class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                         <i id="regEyeIcon1" class="fa-solid fa-eye text-sm"></i>
                     </button>
                 </div>
@@ -195,15 +208,15 @@
                 <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">تأكيد كلمة المرور *</label>
                 <div class="relative">
                     <i class="fa-solid fa-shield-halved absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                    <input type="password" id="regConfirmPassword" required minlength="6" placeholder="أعد كتابة كلمة المرور" class="w-full bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl pr-11 pl-11 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    <button type="button" onclick="togglePasswordVisibility('regConfirmPassword', 'regEyeIcon2')" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <input type="password" id="regConfirmPassword" autocomplete="new-password" required minlength="6" placeholder="أعد كتابة كلمة المرور" class="w-full min-h-[46px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl pr-11 pl-11 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <button type="button" onclick="togglePasswordVisibility('regConfirmPassword', 'regEyeIcon2')" class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                         <i id="regEyeIcon2" class="fa-solid fa-eye text-sm"></i>
                     </button>
                 </div>
             </div>
 
             <div class="pt-2">
-                <button type="submit" id="regSubmitBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl transition text-sm shadow-lg shadow-emerald-200 dark:shadow-none flex items-center justify-center gap-2">
+                <button type="submit" id="regSubmitBtn" class="w-full min-h-[48px] bg-emerald-600 active:scale-[0.99] hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl transition text-sm shadow-lg shadow-emerald-200 dark:shadow-none flex items-center justify-center gap-2">
                     <i class="fa-solid fa-user-plus"></i>
                     <span>إنشاء الحساب والدخول</span>
                 </button>
@@ -213,15 +226,15 @@
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 translate-y-32 opacity-0 transition-all duration-300 z-50 text-sm">
-        <i class="fa-solid fa-check-circle text-emerald-400 text-lg"></i>
-        <span id="toastMessage">تم بنجاح</span>
+    <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 -translate-y-28 opacity-0 transition-all duration-300 z-50 text-sm whitespace-nowrap max-w-[92vw]">
+        <i class="fa-solid fa-check-circle text-emerald-400 text-lg shrink-0"></i>
+        <span id="toastMessage" class="truncate">تم بنجاح</span>
     </div>
 
     <script>
         const DEMO_SESSION_KEY = 'restaurant_procurement_demo_mode';
         const INSTALL_DONE_KEY = 'daggan_pwa_v5_installed';
-        const DEFAULT_AVATAR_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%2316a34a'/><text x='50' y='65' font-size='45' text-anchor='middle' fill='white'>👤</text></svg>";
+        const DEFAULT_AVATAR_SVG = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="%2316a34a"/><text x="50" y="65" font-size="45" text-anchor="middle" fill="white">👤</text></svg>';
 
         function updateThemeIcon() {
             const icon = document.getElementById('loginThemeIcon');
@@ -239,15 +252,46 @@
         function normalizeEmailInput(rawInput) {
             const cleaned = rawInput.trim().toLowerCase();
             if (cleaned.includes('@')) return cleaned;
-            const safeUser = cleaned.replace(/[^a-z0-9._-]/g, '_');
-            return `${safeUser}@procurement.app`;
+            const latinOnly = cleaned.replace(/[^a-z0-9._-]/g, '');
+            if (latinOnly.length >= 2 && latinOnly.length === cleaned.length) {
+                return `${latinOnly}@procurement.app`;
+            }
+            const hexEncoded = Array.from(cleaned)
+                .map(ch => ch.codePointAt(0).toString(16))
+                .join('');
+            return `u_${hexEncoded}@procurement.app`;
+        }
+
+        function compressAvatarFile(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const maxDim = 200;
+                        const scale = Math.min(maxDim / img.width, maxDim / img.height, 1);
+                        canvas.width = Math.round(img.width * scale);
+                        canvas.height = Math.round(img.height * scale);
+                        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+                        canvas.toBlob((blob) => {
+                            resolve({ blob, dataUrl });
+                        }, 'image/jpeg', 0.75);
+                    };
+                    img.onerror = () => resolve({ blob: file, dataUrl: '' });
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => resolve({ blob: file, dataUrl: '' });
+                reader.readAsDataURL(file);
+            });
         }
 
         window.onload = async function() {
             updateThemeIcon();
             initPwaInstallPrompt();
 
-            if (!supabaseClient) {
+            if (typeof supabaseClient === 'undefined' || !supabaseClient) {
                 document.getElementById('configWarningBox').classList.remove('hidden');
                 document.getElementById('serverBadge').innerHTML = `
                     <span class="w-2 h-2 rounded-full bg-amber-400"></span>
@@ -255,10 +299,12 @@
                 `;
                 return;
             }
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) {
-                window.location.href = 'index.html';
-            }
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) {
+                    window.location.href = 'index.html';
+                }
+            } catch (e) {}
         };
 
         function switchAuthTab(tab) {
@@ -312,7 +358,7 @@
         async function handleRegister(e) {
             e.preventDefault();
             hideAlert();
-            if (!supabaseClient) { showAlert("يرجى إعداد مفاتيح Supabase أولاً."); return; }
+            if (typeof supabaseClient === 'undefined' || !supabaseClient) { showAlert("يرجى إعداد مفاتيح Supabase أولاً."); return; }
 
             const fullName = document.getElementById('regFullName').value.trim();
             const projectName = document.getElementById('regProjectName').value.trim();
@@ -328,15 +374,18 @@
             setButtonLoading('regSubmitBtn', true, defaultBtnHtml);
 
             try {
-                let avatarUrl = '';
+                let publicAvatarUrl = '';
+                let fallbackDataUrl = '';
                 if (avatarInput.files && avatarInput.files[0]) {
-                    const file = avatarInput.files[0];
-                    const fileExt = file.name.split('.').pop();
-                    const fileName = `user_${Date.now()}.${fileExt}`;
-                    const { error: uploadError } = await supabaseClient.storage.from('avatars').upload(fileName, file);
+                    const { blob, dataUrl } = await compressAvatarFile(avatarInput.files[0]);
+                    fallbackDataUrl = dataUrl;
+                    const fileName = `user_${Date.now()}.jpg`;
+                    const { error: uploadError } = await supabaseClient.storage
+                        .from('avatars')
+                        .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
                     if (!uploadError) {
                         const { data: urlData } = supabaseClient.storage.from('avatars').getPublicUrl(fileName);
-                        avatarUrl = urlData.publicUrl;
+                        publicAvatarUrl = urlData.publicUrl;
                     }
                 }
 
@@ -344,18 +393,35 @@
                     email: email,
                     password: password,
                     options: {
-                        data: { full_name: fullName, project_name: projectName, username: rawUsername, avatar_url: avatarUrl }
+                        data: {
+                            full_name: fullName,
+                            project_name: projectName,
+                            username: rawUsername,
+                            avatar_url: publicAvatarUrl
+                        }
                     }
                 });
                 if (error) throw error;
 
                 localStorage.removeItem(DEMO_SESSION_KEY);
-                if (data.session) {
+                const finalAvatar = publicAvatarUrl || fallbackDataUrl;
+
+                if (data.session && data.user) {
+                    await supabaseClient.from('profiles').upsert({
+                        id: data.user.id,
+                        full_name: fullName,
+                        project_name: projectName,
+                        avatar_url: finalAvatar,
+                        theme: localStorage.getItem('daggan_theme') || 'light',
+                        lang: localStorage.getItem('daggan_lang') || 'ar',
+                        updated_at: new Date().toISOString()
+                    });
                     showToast("تم إنشاء الحساب بنجاح! جاري الدخول...");
-                    setTimeout(() => { window.location.href = 'index.html'; }, 800);
+                    setTimeout(() => { window.location.href = 'index.html'; }, 700);
                 } else {
-                    showToast("تم إنشاء الحساب! يرجى تسجيل الدخول.");
+                    showToast("تم إنشاء الحساب! يرجى تأكيد البريد الإلكتروني ثم تسجيل الدخول.");
                     switchAuthTab('login');
+                    document.getElementById('loginUsername').value = rawUsername;
                 }
             } catch (err) {
                 let msg = err.message || "حدث خطأ أثناء إنشاء الحساب.";
@@ -369,7 +435,7 @@
         async function handleLogin(e) {
             e.preventDefault();
             hideAlert();
-            if (!supabaseClient) { showAlert("يرجى إعداد مفاتيح Supabase أولاً."); return; }
+            if (typeof supabaseClient === 'undefined' || !supabaseClient) { showAlert("يرجى إعداد مفاتيح Supabase أولاً."); return; }
 
             const rawUsername = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
@@ -384,10 +450,11 @@
 
                 localStorage.removeItem(DEMO_SESSION_KEY);
                 showToast("تم تسجيل الدخول بنجاح!");
-                setTimeout(() => { window.location.href = 'index.html'; }, 600);
+                setTimeout(() => { window.location.href = 'index.html'; }, 500);
             } catch (err) {
                 let msg = err.message || "بيانات الدخول غير صحيحة.";
                 if (msg.includes("Invalid login credentials")) msg = "اسم المستخدم أو كلمة المرور غير صحيحة.";
+                else if (msg.includes("Email not confirmed")) msg = "يرجى تأكيد البريد الإلكتروني أولاً قبل تسجيل الدخول.";
                 showAlert(msg);
             } finally {
                 setButtonLoading('loginSubmitBtn', false, defaultBtnHtml);
@@ -403,8 +470,8 @@
         function showToast(message) {
             const toast = document.getElementById('toast');
             document.getElementById('toastMessage').innerText = message;
-            toast.classList.remove('translate-y-32', 'opacity-0');
-            setTimeout(() => { toast.classList.add('translate-y-32', 'opacity-0'); }, 3000);
+            toast.classList.remove('-translate-y-28', 'opacity-0');
+            setTimeout(() => { toast.classList.add('-translate-y-28', 'opacity-0'); }, 3000);
         }
 
         // --- PWA Service Worker & Smart Install Banner ---
@@ -474,20 +541,21 @@
 
             const banner = document.createElement('div');
             banner.id = 'pwa-install-banner';
-            banner.style.cssText = 'position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); left: 12px; right: 12px; max-width: 440px; margin: 0 auto; z-index: 99999;';
+            banner.className = 'no-print';
+            banner.style.cssText = 'position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); left: 12px; right: 12px; max-width: 440px; margin: 0 auto; z-index: 40;';
             banner.innerHTML = `
-                <div style="background: #0f172a; color: #fff; padding: 14px; border-radius: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.15);">
+                <div style="background: #0f172a; color: #fff; padding: 13px; border-radius: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.15);">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
                         <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                            <img src="./icon-192.png" onerror="this.src='${DEFAULT_AVATAR_SVG}'" style="width: 44px; height: 44px; border-radius: 12px; object-fit: cover; flex-shrink: 0;">
+                            <img src="./icon-192.png" onerror="this.onerror=null;this.src=DEFAULT_AVATAR_SVG" style="width: 42px; height: 42px; border-radius: 12px; object-fit: cover; flex-shrink: 0;">
                             <div style="min-width: 0;">
-                                <div style="font-weight: 800; font-size: 14px;">تثبيت تطبيق دُگّان على هاتفك</div>
+                                <div style="font-weight: 800; font-size: 13px;">تثبيت تطبيق دُگّان على هاتفك</div>
                                 <div style="font-size: 11px; color: #94a3b8;">يعمل بملء الشاشة كتطبيق مستقل وبسرعة عالية</div>
                             </div>
                         </div>
                         <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                            <button type="button" id="pwaInstallConfirmBtn" style="background: #16a34a; color: #fff; border: none; padding: 10px 14px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 13px;">تثبيت</button>
-                            <button type="button" id="pwaInstallDismissBtn" style="background: rgba(255,255,255,0.12); color: #cbd5e1; border: none; padding: 10px 12px; border-radius: 12px; cursor: pointer; font-size: 13px;">✕</button>
+                            <button type="button" id="pwaInstallConfirmBtn" style="background: #16a34a; color: #fff; border: none; padding: 9px 13px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 13px;">تثبيت</button>
+                            <button type="button" id="pwaInstallDismissBtn" style="background: rgba(255,255,255,0.12); color: #cbd5e1; border: none; padding: 9px 11px; border-radius: 12px; cursor: pointer; font-size: 13px;">✕</button>
                         </div>
                     </div>
                     <div id="pwaManualInstallGuide" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.12); font-size: 12px; color: #e2e8f0; line-height: 1.6;">

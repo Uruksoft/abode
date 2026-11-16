@@ -13,8 +13,11 @@
     <meta name="apple-mobile-web-app-title" content="دُگّان">
     <link rel="apple-touch-icon" href="./icon-192.png">
 
-    <!-- التقاط حدث التثبيت مبكراً قبل اكتمال تحميل الصفحة -->
+    <!-- تطبيق المظهر الليلي والتقاط حدث التثبيت مبكراً -->
     <script>
+        if (localStorage.getItem('daggan_theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+        }
         window.__deferredInstallPrompt = null;
         window.addEventListener('beforeinstallprompt', function(e) {
             e.preventDefault();
@@ -46,8 +49,10 @@
 
     <style>
         * {
-            touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+        }
+        button, a, input, select, label {
+            touch-action: manipulation;
         }
         html, body {
             width: 100%;
@@ -57,7 +62,13 @@
             overscroll-behavior-y: contain;
         }
         input, select, button {
-            font-size: 16px !important; /* يمنع تقريب الشاشة التلقائي ويسهّل اللمس على الهاتف */
+            font-size: 16px !important;
+        }
+        input[type="date"] {
+            -webkit-appearance: none;
+            appearance: none;
+            min-width: 0;
+            max-width: 100%;
         }
         .safe-top {
             padding-top: env(safe-area-inset-top, 0px);
@@ -78,15 +89,15 @@
 
     <!-- Header Navigation -->
     <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-xs safe-top no-print">
-        <div class="max-w-3xl mx-auto px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2.5 min-w-0">
-                <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-sm shrink-0">
-                    <i class="fa-solid fa-cart-shopping text-base"></i>
+        <div class="max-w-3xl mx-auto px-3 py-2.5 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-sm shrink-0">
+                    <i class="fa-solid fa-cart-shopping text-sm sm:text-base"></i>
                 </div>
                 <div class="min-w-0">
                     <div class="flex items-center gap-1.5">
-                        <h1 class="font-black text-base leading-tight text-slate-900 dark:text-white truncate" id="headerProjectName">دُگّان</h1>
-                        <span id="cloudStatusBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800 shrink-0 inline-flex items-center gap-1">
+                        <h1 class="font-black text-sm sm:text-base leading-tight text-slate-900 dark:text-white truncate" id="headerProjectName">دُگّان</h1>
+                        <span id="cloudStatusBadge" class="text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800 shrink-0 inline-flex items-center gap-1">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                             <span>متصل</span>
                         </span>
@@ -95,9 +106,9 @@
                 </div>
             </div>
             
-            <div class="flex items-center gap-2 shrink-0">
+            <div class="flex items-center gap-1.5 shrink-0">
                 <div id="userAccountArea"></div>
-                <button type="button" onclick="openSettingsModal()" class="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 flex items-center justify-center transition" title="الإعدادات">
+                <button type="button" onclick="openSettingsModal()" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-slate-100 dark:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 flex items-center justify-center transition shrink-0" title="الإعدادات">
                     <i class="fa-solid fa-gear text-base"></i>
                 </button>
             </div>
@@ -105,7 +116,7 @@
     </header>
 
     <!-- Main Container -->
-    <main class="flex-1 max-w-3xl w-full mx-auto px-3.5 pt-4 pb-28">
+    <main id="mainContainer" class="flex-1 max-w-3xl w-full mx-auto px-3.5 pt-4 pb-28">
 
         <!-- TAB 1: SHOPPING LIST -->
         <div id="tabContent-shopping" class="space-y-4">
@@ -134,17 +145,17 @@
                     </button>
                 </div>
                 <form onsubmit="addItemToCart(event)" class="grid grid-cols-2 gap-3">
-                    <div class="col-span-2">
+                    <div class="col-span-2 min-w-0">
                         <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="labelMaterial">المادة *</label>
                         <select id="cartMaterialSelect" required onchange="onMaterialSelected()" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5 focus:outline-none focus:border-emerald-500">
                             <option value="">-- اختر المادة --</option>
                         </select>
                     </div>
-                    <div>
+                    <div class="min-w-0">
                         <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="labelQty">الكمية *</label>
                         <input type="number" step="any" inputmode="decimal" id="cartQty" required min="0.01" placeholder="1" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5 focus:outline-none focus:border-emerald-500">
                     </div>
-                    <div>
+                    <div class="min-w-0">
                         <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="labelPrice">السعر *</label>
                         <input type="number" step="any" inputmode="decimal" id="cartPrice" required min="0" placeholder="0" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5 focus:outline-none focus:border-emerald-500">
                     </div>
@@ -174,13 +185,13 @@
         <div id="tabContent-expenses" class="space-y-4 hidden">
             <div class="bg-slate-900 text-white p-5 rounded-3xl shadow-lg">
                 <div class="grid grid-cols-2 gap-3">
-                    <div>
+                    <div class="min-w-0">
                         <span class="text-slate-400 text-[11px] block mb-1"><span data-i18n="todayExpensesLabel">مصروفات اليوم</span> (<span id="todayDateDisplay"></span>)</span>
-                        <div class="text-2xl font-black text-amber-400" id="todayExpensesTotal">0 د.ع</div>
+                        <div class="text-xl sm:text-2xl font-black text-amber-400 truncate" id="todayExpensesTotal">0 د.ع</div>
                     </div>
-                    <div class="border-r border-white/10 pr-3">
+                    <div class="border-r border-white/10 pr-3 min-w-0">
                         <span class="text-slate-400 text-[11px] block mb-1" data-i18n="allExpensesLabel">إجمالي المصروفات الكلي</span>
-                        <div class="text-xl font-bold text-white" id="allExpensesTotal">0 د.ع</div>
+                        <div class="text-lg sm:text-xl font-bold text-white truncate" id="allExpensesTotal">0 د.ع</div>
                     </div>
                 </div>
             </div>
@@ -192,19 +203,19 @@
                     <span data-i18n="addExpenseTitle">تسجيل مصروف يومي جديد</span>
                 </h3>
                 <form onsubmit="addExpense(event)" class="grid grid-cols-2 gap-3">
-                    <div class="col-span-2">
+                    <div class="col-span-2 min-w-0">
                         <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="expTitleLabel">بيان المصروف *</label>
                         <input type="text" id="expTitle" required placeholder="مثلاً: أجور تكسي، غاز..." class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5">
                     </div>
-                    <div>
+                    <div class="min-w-0">
                         <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="expAmountLabel">المبلغ (د.ع) *</label>
                         <input type="number" step="any" inputmode="decimal" id="expAmount" required min="1" placeholder="0" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5">
                     </div>
-                    <div>
+                    <div class="min-w-0">
                         <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="labelDate">التاريخ *</label>
-                        <input type="date" id="expDate" required class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5">
+                        <input type="date" id="expDate" required class="w-full min-w-0 min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-2.5 py-2.5">
                     </div>
-                    <div class="col-span-2">
+                    <div class="col-span-2 min-w-0">
                         <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="expCatLabel">التصنيف *</label>
                         <select id="expCategory" required class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5">
                             <option value="نقل وتوصيل">نقل وتوصيل</option>
@@ -215,7 +226,7 @@
                             <option value="نثريات وأخرى">نثريات وأخرى</option>
                         </select>
                     </div>
-                    <div class="col-span-2">
+                    <div class="col-span-2 min-w-0">
                         <input type="text" id="expNotes" placeholder="ملاحظات إضافية (اختياري)..." class="w-full min-h-[46px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2">
                     </div>
                     <div class="col-span-2">
@@ -228,27 +239,27 @@
             </div>
 
             <!-- تقرير المصروفات من تاريخ إلى تاريخ -->
-            <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 space-y-3">
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 space-y-3 overflow-hidden">
                 <div class="flex items-center justify-between gap-2">
                     <h3 class="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
                         <i class="fa-solid fa-filter text-amber-500"></i>
                         <span data-i18n="expFilterTitle">تقرير المصروفات (من - إلى)</span>
                     </h3>
-                    <div class="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-2.5 py-1 rounded-xl text-xs font-black text-amber-800 dark:text-amber-300">
+                    <div class="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-2.5 py-1 rounded-xl text-xs font-black text-amber-800 dark:text-amber-300 shrink-0">
                         <span id="filteredExpensesSum">0 د.ع</span>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2.5 no-print">
-                    <div>
+                    <div class="min-w-0">
                         <label class="block text-[11px] font-bold text-slate-500 mb-1" data-i18n="fromDate">من تاريخ</label>
-                        <input type="date" id="expFilterStart" onchange="renderExpensesList()" class="w-full min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2.5 py-2">
+                        <input type="date" id="expFilterStart" onchange="renderExpensesList()" class="w-full min-w-0 min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2">
                     </div>
-                    <div>
+                    <div class="min-w-0">
                         <label class="block text-[11px] font-bold text-slate-500 mb-1" data-i18n="toDate">إلى تاريخ</label>
-                        <input type="date" id="expFilterEnd" onchange="renderExpensesList()" class="w-full min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2.5 py-2">
+                        <input type="date" id="expFilterEnd" onchange="renderExpensesList()" class="w-full min-w-0 min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2">
                     </div>
-                    <div>
-                        <select id="expFilterCat" onchange="renderExpensesList()" class="w-full min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2.5 py-2">
+                    <div class="min-w-0">
+                        <select id="expFilterCat" onchange="renderExpensesList()" class="w-full min-w-0 min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2">
                             <option value="all">كل التصنيفات</option>
                             <option value="نقل وتوصيل">نقل وتوصيل</option>
                             <option value="رواتب وأجور">رواتب وأجور</option>
@@ -258,9 +269,9 @@
                             <option value="نثريات وأخرى">نثريات وأخرى</option>
                         </select>
                     </div>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="resetExpenseFilter()" class="flex-1 min-h-[44px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs" data-i18n="btnReset">إعادة ضبط</button>
-                        <button type="button" onclick="window.print()" class="w-12 min-h-[44px] bg-amber-500 text-white font-bold rounded-xl flex items-center justify-center"><i class="fa-solid fa-print"></i></button>
+                    <div class="flex gap-2 min-w-0">
+                        <button type="button" onclick="resetExpenseFilter()" class="flex-1 min-w-0 min-h-[44px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs truncate px-1" data-i18n="btnReset">إعادة ضبط</button>
+                        <button type="button" onclick="window.print()" class="w-11 shrink-0 min-h-[44px] bg-amber-500 text-white font-bold rounded-xl flex items-center justify-center"><i class="fa-solid fa-print"></i></button>
                     </div>
                 </div>
             </div>
@@ -278,9 +289,9 @@
         <!-- TAB 3: MATERIALS -->
         <div id="tabContent-materials" class="space-y-4 hidden">
             <div class="flex items-center justify-between gap-2">
-                <div>
-                    <h2 class="font-black text-lg text-slate-900 dark:text-white" data-i18n="materialsTitle">إدارة المواد الأساسية</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n="materialsSub">تعريف المواد ووحداتها الثابتة</p>
+                <div class="min-w-0">
+                    <h2 class="font-black text-lg text-slate-900 dark:text-white truncate" data-i18n="materialsTitle">إدارة المواد الأساسية</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 truncate" data-i18n="materialsSub">تعريف المواد ووحداتها الثابتة</p>
                 </div>
                 <button type="button" onclick="openMaterialModal()" class="min-h-[46px] bg-emerald-600 active:scale-95 text-white font-bold px-4 py-2.5 rounded-2xl shadow-md transition flex items-center gap-2 text-sm shrink-0">
                     <i class="fa-solid fa-plus"></i>
@@ -294,19 +305,19 @@
 
         <!-- TAB 4: REPORTS & ARCHIVE -->
         <div id="tabContent-reports" class="space-y-4 hidden">
-            <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 space-y-3 no-print">
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 space-y-3 overflow-hidden no-print">
                 <h2 class="font-black text-lg text-slate-900 dark:text-white" data-i18n="reportsTitle">السجل والتقارير المفصلة</h2>
                 <div class="grid grid-cols-2 gap-2.5">
-                    <div>
+                    <div class="min-w-0">
                         <label class="block text-[11px] font-bold text-slate-500 mb-1" data-i18n="fromDate">من تاريخ</label>
-                        <input type="date" id="reportStartDate" class="w-full min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2.5 py-2">
+                        <input type="date" id="reportStartDate" class="w-full min-w-0 min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2">
                     </div>
-                    <div>
+                    <div class="min-w-0">
                         <label class="block text-[11px] font-bold text-slate-500 mb-1" data-i18n="toDate">إلى تاريخ</label>
-                        <input type="date" id="reportEndDate" class="w-full min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2.5 py-2">
+                        <input type="date" id="reportEndDate" class="w-full min-w-0 min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2">
                     </div>
-                    <div class="col-span-2">
-                        <select id="reportTypeFilter" class="w-full min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2">
+                    <div class="col-span-2 min-w-0">
+                        <select id="reportTypeFilter" class="w-full min-w-0 min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2">
                             <option value="all">شامل (قوائم المشتريات + المصروفات)</option>
                             <option value="purchases">قوائم المشتريات فقط</option>
                             <option value="expenses">المصروفات اليومية فقط</option>
@@ -316,7 +327,7 @@
                         <button type="button" onclick="generateReport()" class="flex-1 min-h-[46px] bg-emerald-600 active:scale-[0.99] text-white font-bold py-2.5 rounded-xl transition shadow-sm" data-i18n="btnShowReport">
                             عرض التقرير
                         </button>
-                        <button type="button" onclick="window.print()" class="w-12 min-h-[46px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl flex items-center justify-center">
+                        <button type="button" onclick="window.print()" class="w-12 shrink-0 min-h-[46px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl flex items-center justify-center">
                             <i class="fa-solid fa-print"></i>
                         </button>
                     </div>
@@ -325,17 +336,17 @@
 
             <div id="reportResultContainer" class="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 hidden space-y-4">
                 <div class="grid grid-cols-3 gap-2 border-b border-slate-100 dark:border-slate-700 pb-3 text-center">
-                    <div class="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50">
+                    <div class="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 min-w-0">
                         <span class="text-[10px] text-emerald-700 dark:text-emerald-300 block" data-i18n="totalPurchasesLabel">المشتريات</span>
-                        <span class="font-black text-emerald-900 dark:text-emerald-100 text-xs" id="repPurchasesTotal">0</span>
+                        <span class="font-black text-emerald-900 dark:text-emerald-100 text-xs block truncate" id="repPurchasesTotal">0</span>
                     </div>
-                    <div class="p-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/50">
+                    <div class="p-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/50 min-w-0">
                         <span class="text-[10px] text-amber-700 dark:text-amber-300 block" data-i18n="totalExpensesLabel">المصروفات</span>
-                        <span class="font-black text-amber-900 dark:text-amber-100 text-xs" id="repExpensesTotal">0</span>
+                        <span class="font-black text-amber-900 dark:text-amber-100 text-xs block truncate" id="repExpensesTotal">0</span>
                     </div>
-                    <div class="p-2.5 rounded-2xl bg-slate-900 text-white">
+                    <div class="p-2.5 rounded-2xl bg-slate-900 text-white min-w-0">
                         <span class="text-[10px] text-slate-300 block" data-i18n="grandTotalLabel">الإجمالي</span>
-                        <span class="font-black text-emerald-400 text-xs" id="repGrandTotal">0</span>
+                        <span class="font-black text-emerald-400 text-xs block truncate" id="repGrandTotal">0</span>
                     </div>
                 </div>
                 <div id="reportArchiveList" class="space-y-3"></div>
@@ -343,8 +354,8 @@
         </div>
     </main>
 
-    <!-- Bottom Mobile Navigation Bar (4 متساوية بدون قص أفقي) -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 z-30 safe-bottom shadow-lg no-print">
+    <!-- Bottom Mobile Navigation Bar -->
+    <nav id="bottomNav" class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 z-30 safe-bottom shadow-lg no-print">
         <div class="max-w-3xl mx-auto grid grid-cols-4 gap-1 px-2 py-1.5">
             <button type="button" onclick="switchTab('shopping')" id="tabBtn-shopping" class="py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400">
                 <i class="fa-solid fa-basket-shopping text-base"></i>
@@ -366,8 +377,8 @@
     </nav>
 
     <!-- MODAL: ADD MATERIAL -->
-    <div id="materialModal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 safe-bottom">
+    <div id="materialModal" onclick="if(event.target===this) closeMaterialModal()" class="fixed inset-0 bg-slate-900/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden overflow-y-auto">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90dvh] overflow-y-auto safe-bottom">
             <div class="flex items-center justify-between">
                 <h3 class="font-black text-lg text-slate-900 dark:text-white" data-i18n="btnNewMaterial">إضافة مادة جديدة</h3>
                 <button type="button" onclick="closeMaterialModal()" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
@@ -378,7 +389,7 @@
                     <input type="text" id="matName" required placeholder="مثلاً: طحين، زيت..." class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-4 py-2.5">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div>
+                    <div class="min-w-0">
                         <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="matUnitLabel">الوحدة *</label>
                         <select id="matUnit" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3 py-2.5">
                             <option value="كارتون">كارتون</option>
@@ -391,7 +402,7 @@
                             <option value="أخرى">أخرى</option>
                         </select>
                     </div>
-                    <div>
+                    <div class="min-w-0">
                         <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="matPriceLabel">السعر التقريبي</label>
                         <input type="number" step="any" inputmode="decimal" id="matDefaultPrice" placeholder="0" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5">
                     </div>
@@ -402,7 +413,7 @@
     </div>
 
     <!-- MODAL: SETTINGS & PROFILE -->
-    <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden overflow-y-auto">
+    <div id="settingsModal" onclick="if(event.target===this) closeSettingsModal()" class="fixed inset-0 bg-slate-900/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden overflow-y-auto">
         <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90dvh] overflow-y-auto safe-bottom">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
                 <h3 class="font-black text-lg text-slate-900 dark:text-white flex items-center gap-2">
@@ -418,7 +429,7 @@
                     <div class="text-xs font-bold text-emerald-600 dark:text-emerald-400" data-i18n="profileSectionTitle">الملف الشخصي (البروفايل)</div>
                     <div class="flex items-center gap-3">
                         <div class="relative shrink-0">
-                            <img id="settingsAvatarPreview" src="./icon-192.png" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2250%22 fill=%22%2316a34a%22/><text x=%2250%22 y=%2265%22 font-size=%2245%22 text-anchor=%22middle%22 fill=%22white%22>👤</text></svg>'" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-500 bg-white">
+                            <img id="settingsAvatarPreview" src="./icon-192.png" onerror="this.onerror=null;this.src=DEFAULT_AVATAR_SVG" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-500 bg-white">
                             <label for="settingsAvatarInput" class="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center cursor-pointer shadow-md">
                                 <i class="fa-solid fa-camera text-xs"></i>
                             </label>
@@ -437,14 +448,14 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
-                    <div>
+                    <div class="min-w-0">
                         <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="themeLabel">المظهر</label>
                         <select id="settingThemeMode" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3 py-2.5">
                             <option value="light" data-i18n="themeLight">نهاري</option>
                             <option value="dark" data-i18n="themeDark">ليلي</option>
                         </select>
                     </div>
-                    <div>
+                    <div class="min-w-0">
                         <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="languageLabel">اللغة</label>
                         <select id="settingLanguage" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3 py-2.5">
                             <option value="ar">العربية</option>
@@ -461,10 +472,18 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 -translate-y-24 opacity-0 transition-all duration-200 z-50 text-sm whitespace-nowrap">
-        <i class="fa-solid fa-check-circle text-emerald-400 text-base"></i>
-        <span id="toastMessage">تم الحفظ بنجاح</span>
+    <!-- إشعارات داخل المنصة (In-App Notification Banner) -->
+    <div id="inAppNotification" onclick="hideInAppNotification()" class="fixed top-3 left-3 right-3 max-w-md mx-auto bg-slate-900 dark:bg-slate-800 text-white p-3.5 rounded-2xl shadow-2xl border border-emerald-500/40 flex items-center gap-3 -translate-y-32 opacity-0 pointer-events-none transition-all duration-300 z-50 cursor-pointer no-print">
+        <div id="inAppNotifIcon" class="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-bell text-base"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+            <div id="inAppNotifTitle" class="font-black text-xs text-emerald-400 truncate">دُگّان</div>
+            <div id="inAppNotifBody" class="text-xs text-slate-100 leading-snug line-clamp-2">تم الحفظ بنجاح</div>
+        </div>
+        <button type="button" class="w-7 h-7 rounded-lg bg-white/10 text-slate-300 flex items-center justify-center shrink-0 text-xs">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
     </div>
 
     <!-- JavaScript Application Logic -->
@@ -474,15 +493,15 @@
         const INSTALL_DONE_KEY = 'daggan_pwa_v5_installed';
         const SYNC_QUEUE_KEY = 'daggan_sync_queue_v5';
 
-        const DEFAULT_AVATAR_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%2316a34a'/><text x='50' y='65' font-size='45' text-anchor='middle' fill='white'>👤</text></svg>";
+        const DEFAULT_AVATAR_SVG = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="%2316a34a"/><text x="50" y="65" font-size="45" text-anchor="middle" fill="white">👤</text></svg>';
 
         let currentUser = null;
         let isCloudMode = false;
         let pendingAvatarFile = null;
         let pendingAvatarDataUrl = null;
         let isFlushingQueue = false;
+        let inAppNotifTimer = null;
 
-        // تتبع العناصر المؤقتة التي تم حذفها قبل عودة المعرّف الحقيقي من السيرفر (لمنع Race Condition)
         const pendingDeletedTempIds = new Set();
 
         let appData = {
@@ -617,7 +636,6 @@
             return (I18N[lang] && I18N[lang][key]) || I18N.ar[key] || key;
         }
 
-        // إصلاح التوقيت المحلي بدلاً من UTC
         function getTodayISO() {
             const now = new Date();
             const yyyy = now.getFullYear();
@@ -638,6 +656,103 @@
         function setSyncBar(show) {
             const bar = document.getElementById('syncBar');
             if (bar) bar.classList.toggle('hidden', !show);
+        }
+
+        // --- إشعارات داخل المنصة فقط (In-App Notification Banner) ---
+        function hideInAppNotification() {
+            const el = document.getElementById('inAppNotification');
+            if (!el) return;
+            el.classList.add('-translate-y-32', 'opacity-0', 'pointer-events-none');
+        }
+
+        function showInAppNotification(title, body, type = 'success') {
+            const el = document.getElementById('inAppNotification');
+            const titleEl = document.getElementById('inAppNotifTitle');
+            const bodyEl = document.getElementById('inAppNotifBody');
+            const iconBox = document.getElementById('inAppNotifIcon');
+            if (!el) return;
+
+            const styles = {
+                success: {
+                    border: 'border-emerald-500/40',
+                    iconBg: 'bg-emerald-600/20 text-emerald-400',
+                    titleColor: 'text-emerald-400',
+                    icon: 'fa-circle-check'
+                },
+                warning: {
+                    border: 'border-amber-500/40',
+                    iconBg: 'bg-amber-500/20 text-amber-400',
+                    titleColor: 'text-amber-400',
+                    icon: 'fa-triangle-exclamation'
+                },
+                danger: {
+                    border: 'border-rose-500/40',
+                    iconBg: 'bg-rose-500/20 text-rose-400',
+                    titleColor: 'text-rose-400',
+                    icon: 'fa-trash-can'
+                },
+                info: {
+                    border: 'border-sky-500/40',
+                    iconBg: 'bg-sky-500/20 text-sky-400',
+                    titleColor: 'text-sky-400',
+                    icon: 'fa-bell'
+                }
+            };
+
+            const s = styles[type] || styles.success;
+            el.className = `fixed top-3 left-3 right-3 max-w-md mx-auto bg-slate-900 dark:bg-slate-800 text-white p-3.5 rounded-2xl shadow-2xl border ${s.border} flex items-center gap-3 transition-all duration-300 z-50 cursor-pointer no-print`;
+            iconBox.className = `w-10 h-10 rounded-xl ${s.iconBg} flex items-center justify-center shrink-0`;
+            iconBox.innerHTML = `<i class="fa-solid ${s.icon} text-base"></i>`;
+            titleEl.className = `font-black text-xs ${s.titleColor} truncate`;
+            titleEl.innerText = title || appData.appName || 'دُگّان';
+            bodyEl.innerText = body;
+
+            clearTimeout(inAppNotifTimer);
+            inAppNotifTimer = setTimeout(hideInAppNotification, 3200);
+        }
+
+        function sendAppNotification(title, body, type = 'info') {
+            showInAppNotification(title, body, type);
+        }
+
+        function showToast(msg, type = 'success') {
+            showInAppNotification(appData.appName || 'دُگّان', msg, type);
+        }
+
+        // إخفاء شريط التنقل السفلي عند فتح كيبورد الهاتف
+        function initMobileKeyboardHandler() {
+            const nav = document.getElementById('bottomNav');
+            const main = document.getElementById('mainContainer');
+            if (!nav || !main) return;
+
+            const isTextField = (el) => {
+                if (!el) return false;
+                const tag = el.tagName;
+                if (tag === 'TEXTAREA') return true;
+                if (tag === 'INPUT') {
+                    const excluded = ['date', 'file', 'checkbox', 'radio', 'button', 'submit'];
+                    return !excluded.includes((el.type || '').toLowerCase());
+                }
+                return false;
+            };
+
+            document.addEventListener('focusin', (e) => {
+                if (window.innerWidth < 768 && isTextField(e.target)) {
+                    nav.classList.add('hidden');
+                    main.classList.remove('pb-28');
+                    main.classList.add('pb-6');
+                }
+            });
+
+            document.addEventListener('focusout', () => {
+                setTimeout(() => {
+                    if (!isTextField(document.activeElement)) {
+                        nav.classList.remove('hidden');
+                        main.classList.remove('pb-6');
+                        main.classList.add('pb-28');
+                    }
+                }, 120);
+            });
         }
 
         // --- إدارة طابور المزامنة أثناء انقطاع الإنترنت ---
@@ -682,7 +797,6 @@
                 while (queue.length > 0) {
                     const op = queue[0];
 
-                    // تخطي أي عنصر مؤقت تم حذفه قبل المزامنة
                     if (op.tempId && pendingDeletedTempIds.has(op.tempId)) {
                         pendingDeletedTempIds.delete(op.tempId);
                         queue.shift();
@@ -761,13 +875,14 @@
                             if (error) throw error;
                         }
                     } else if (op.type === 'update_profile') {
-                        await supabaseClient.auth.updateUser({
-                            data: {
-                                full_name: op.payload.full_name,
-                                project_name: op.payload.project_name,
-                                avatar_url: op.payload.avatar_url
-                            }
-                        });
+                        const authMeta = {
+                            full_name: op.payload.full_name,
+                            project_name: op.payload.project_name
+                        };
+                        if (op.payload.avatar_url && !op.payload.avatar_url.startsWith('data:')) {
+                            authMeta.avatar_url = op.payload.avatar_url;
+                        }
+                        await supabaseClient.auth.updateUser({ data: authMeta });
                         const { error } = await supabaseClient
                             .from('profiles')
                             .upsert({ ...op.payload, id: currentUser.id });
@@ -793,39 +908,21 @@
                 await flushSyncQueue();
                 await loadDataFromSupabase();
                 updateAllViews();
-                showToast(appData.lang === 'en' ? 'Back online & synced' : 'عادت الشبكة وتمت مزامنة البيانات');
+                showToast(appData.lang === 'en' ? 'Back online & synced' : 'عادت الشبكة وتمت مزامنة البيانات', 'success');
             }
         });
 
         window.addEventListener('offline', () => {
             renderUserSessionHeader();
-            showToast(appData.lang === 'en' ? 'Offline mode: changes saved locally' : 'انقطع الاتصال: سيتم الحفظ محلياً والمزامنة تلقائياً');
+            showToast(appData.lang === 'en' ? 'Offline mode: changes saved locally' : 'انقطع الاتصال: سيتم الحفظ محلياً والمزامنة تلقائياً', 'warning');
         });
-
-        async function sendAppNotification(title, body) {
-            if (!('Notification' in window)) return;
-            if (Notification.permission === 'default') {
-                await Notification.requestPermission();
-            }
-            if (Notification.permission === 'granted' && 'serviceWorker' in navigator) {
-                try {
-                    const reg = await navigator.serviceWorker.ready;
-                    await reg.showNotification(title, {
-                        body: body,
-                        icon: './icon-192.png',
-                        badge: './icon-192.png',
-                        vibrate: [150, 80, 150]
-                    });
-                } catch (e) {}
-            }
-        }
 
         window.onload = async function() {
             const today = getTodayISO();
             document.getElementById('expDate').value = today;
             document.getElementById('todayDateDisplay').innerText = today;
 
-            // تفعيل إشعار تثبيت التطبيق للمستخدمين غير المثبّت لديهم
+            initMobileKeyboardHandler();
             initPwaInstallPrompt();
 
             const isDemo = localStorage.getItem(DEMO_SESSION_KEY) === 'true';
@@ -836,7 +933,7 @@
                     if (session && session.user) {
                         currentUser = session.user;
                         isCloudMode = true;
-                        loadLocalData(true); // تحميل النسخة المحلية أولاً لعرض فوري
+                        loadLocalData(true);
                         await loadDataFromSupabase();
                     } else if (!isDemo) {
                         window.location.href = './login.html';
@@ -883,7 +980,6 @@
                 localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(appData));
             } catch (e) {
                 console.warn('localStorage quota warning:', e);
-                // في حال امتلاء الذاكرة بسبب صورة كبيرة، نحذف الصورة المحلية ونحفظ البيانات المالية
                 if (appData.avatarUrl && appData.avatarUrl.startsWith('data:')) {
                     appData.avatarUrl = '';
                     try {
@@ -897,7 +993,6 @@
             if (!supabaseClient || !currentUser) return;
             setSyncBar(true);
             try {
-                // مزامنة أي عمليات مسجلة أثناء انقطاع الإنترنت قبل جلب بيانات السيرفر
                 await flushSyncQueue();
 
                 const [profileRes, matRes, cartRes, archiveRes, expRes] = await Promise.all([
@@ -908,7 +1003,6 @@
                     supabaseClient.from('expenses').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true })
                 ]);
 
-                // إذا بقي شيء في طابور المزامنة بسبب انقطاع الشبكة، لا نستبدل البيانات المحلية
                 if (getSyncQueue().length > 0) {
                     return;
                 }
@@ -916,7 +1010,7 @@
                 const meta = currentUser.user_metadata || {};
                 appData.appName = profileRes.data?.project_name || meta.project_name || appData.appName || "دُگّان";
                 appData.userName = profileRes.data?.full_name || meta.full_name || meta.username || currentUser.email;
-                appData.avatarUrl = profileRes.data?.avatar_url || meta.avatar_url || "";
+                appData.avatarUrl = profileRes.data?.avatar_url || meta.avatar_url || appData.avatarUrl || "";
                 appData.theme = profileRes.data?.theme || localStorage.getItem('daggan_theme') || 'light';
                 appData.lang = profileRes.data?.lang || localStorage.getItem('daggan_lang') || 'ar';
 
@@ -972,29 +1066,45 @@
             const pendingCount = getSyncQueue().length;
 
             if (!isCloudMode || !currentUser) {
-                badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 shrink-0 inline-flex items-center gap-1";
+                badge.className = "text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 shrink-0 inline-flex items-center gap-1";
                 badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span>محلي</span>`;
             } else if (!navigator.onLine || pendingCount > 0) {
-                badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 shrink-0 inline-flex items-center gap-1";
-                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span><span>${pendingCount > 0 ? `بانتظار المزامنة (${pendingCount})` : 'غير متصل'}</span>`;
+                badge.className = "text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 shrink-0 inline-flex items-center gap-1";
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span><span>${pendingCount > 0 ? `مزامنة (${pendingCount})` : 'غير متصل'}</span>`;
             } else {
-                badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800 shrink-0 inline-flex items-center gap-1";
+                badge.className = "text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800 shrink-0 inline-flex items-center gap-1";
                 badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span>متصل</span>`;
             }
 
             const avatarSrc = appData.avatarUrl || DEFAULT_AVATAR_SVG;
             container.innerHTML = `
-                <button type="button" onclick="openSettingsModal()" class="h-11 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/60 active:scale-95 border border-emerald-200 dark:border-emerald-800 px-2.5 rounded-xl transition">
-                    <img src="${escapeHtml(avatarSrc)}" onerror="this.src='${DEFAULT_AVATAR_SVG}'" class="w-7 h-7 rounded-full object-cover border border-emerald-400">
-                    <span class="text-xs font-bold text-emerald-900 dark:text-emerald-200 truncate max-w-[85px]">${escapeHtml(appData.userName)}</span>
+                <button type="button" onclick="openSettingsModal()" class="h-10 sm:h-11 flex items-center gap-1.5 sm:gap-2 bg-emerald-50 dark:bg-emerald-950/60 active:scale-95 border border-emerald-200 dark:border-emerald-800 px-2 sm:px-2.5 rounded-xl transition">
+                    <img src="${escapeHtml(avatarSrc)}" onerror="this.onerror=null;this.src=DEFAULT_AVATAR_SVG" class="w-7 h-7 rounded-full object-cover border border-emerald-400 shrink-0">
+                    <span class="text-xs font-bold text-emerald-900 dark:text-emerald-200 truncate max-w-[68px] sm:max-w-[100px]">${escapeHtml(appData.userName)}</span>
                 </button>`;
         }
 
         async function logoutUser() {
             if (!confirm(appData.lang === 'en' ? "Logout now?" : "هل تريد تسجيل الخروج؟")) return;
-            if (typeof supabaseClient !== 'undefined' && supabaseClient) await supabaseClient.auth.signOut();
+
+            try {
+                if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                    await supabaseClient.auth.signOut({ scope: 'local' });
+                }
+            } catch (err) {
+                console.warn('SignOut warning:', err);
+            }
+
+            // مسح أي بقايا جلسة مخزنة في المتصفح لضمان عدم العودة التلقائية
+            Object.keys(localStorage).forEach((key) => {
+                if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                    localStorage.removeItem(key);
+                }
+            });
             localStorage.removeItem(DEMO_SESSION_KEY);
-            window.location.href = './login.html';
+            sessionStorage.clear();
+
+            window.location.replace('./login.html');
         }
 
         function updateAllViews() {
@@ -1045,7 +1155,7 @@
             select.value = '';
             document.getElementById('cartQty').value = '';
             document.getElementById('cartPrice').value = '';
-            showToast(appData.lang === 'en' ? "Added" : "تمت الإضافة للقائمة");
+            showToast(appData.lang === 'en' ? "Added" : `تمت إضافة (${name}) لقائمة الشراء`, 'success');
 
             if (isCloudMode && supabaseClient && currentUser) {
                 const payload = { material_id: matId, name, unit, qty, price };
@@ -1118,7 +1228,7 @@
             appData.activeCart = appData.activeCart.filter(i => i.id !== id);
             saveLocalData();
             renderCartList();
-            showToast(appData.lang === 'en' ? "Removed" : "تمت الإزالة");
+            showToast(appData.lang === 'en' ? "Removed" : "تمت إزالة المادة من القائمة", 'danger');
 
             if (!isCloudMode || !supabaseClient || !currentUser) return;
 
@@ -1155,7 +1265,7 @@
             appData.activeCart = [];
             saveLocalData();
             renderCartList();
-            showToast(appData.lang === 'en' ? "List cleared" : "تم تفريغ القائمة");
+            showToast(appData.lang === 'en' ? "List cleared" : "تم تفريغ القائمة بالكامل", 'danger');
 
             if (isCloudMode && supabaseClient && currentUser) {
                 if (!navigator.onLine) {
@@ -1176,7 +1286,7 @@
 
         async function checkoutCart() {
             if (appData.activeCart.length === 0) {
-                showToast(appData.lang === 'en' ? "List is empty!" : "قائمة الشراء فارغة!");
+                showToast(appData.lang === 'en' ? "List is empty!" : "قائمة الشراء فارغة!", 'warning');
                 return;
             }
             if (!confirm(appData.lang === 'en' ? "Checkout and archive this list?" : "إتمام التحاسب وترحيل القائمة إلى السجل؟")) return;
@@ -1200,8 +1310,7 @@
             renderCartList();
 
             const listNum = appData.archiveSessions.length;
-            showToast(`تم ترحيل القائمة رقم #${listNum}`);
-            sendAppNotification(appData.appName, `تم إتمام التحاسب للقائمة رقم #${listNum} بمبلغ ${total.toLocaleString()} د.ع`);
+            sendAppNotification(appData.appName, `تم إتمام التحاسب للقائمة رقم #${listNum} بمبلغ ${total.toLocaleString()} د.ع`, 'success');
 
             if (isCloudMode && supabaseClient && currentUser) {
                 const payload = { date: dateStr, timestamp_label: timestamp, items, total };
@@ -1248,8 +1357,7 @@
             document.getElementById('expTitle').value = '';
             document.getElementById('expAmount').value = '';
             document.getElementById('expNotes').value = '';
-            showToast(appData.lang === 'en' ? "Expense saved" : "تم تسجيل المصروف");
-            sendAppNotification(appData.appName, `مصروف جديد: ${title} (${amount.toLocaleString()} د.ع)`);
+            sendAppNotification(appData.appName, `تم تسجيل مصروف: ${title} (${amount.toLocaleString()} د.ع)`, 'success');
 
             if (isCloudMode && supabaseClient && currentUser) {
                 const payload = { title, category, amount, date, notes };
@@ -1347,7 +1455,7 @@
             appData.expenses = appData.expenses.filter(ex => ex.id !== id);
             saveLocalData();
             renderExpensesList();
-            showToast(appData.lang === 'en' ? "Deleted" : "تم الحذف");
+            showToast(appData.lang === 'en' ? "Deleted" : "تم حذف المصروف", 'danger');
 
             if (!isCloudMode || !supabaseClient || !currentUser) return;
 
@@ -1420,7 +1528,7 @@
             document.getElementById('matName').value = '';
             document.getElementById('matDefaultPrice').value = '';
             closeMaterialModal();
-            showToast(appData.lang === 'en' ? "Material added" : "تمت إضافة المادة بنجاح");
+            showToast(appData.lang === 'en' ? "Material added" : `تمت إضافة (${name}) للمواد الأساسية`, 'success');
 
             if (isCloudMode && supabaseClient && currentUser) {
                 const payload = { name, unit, default_price: defaultPrice };
@@ -1462,7 +1570,7 @@
             appData.materials = appData.materials.filter(m => m.id !== id);
             saveLocalData();
             updateAllViews();
-            showToast(appData.lang === 'en' ? "Deleted" : "تم الحذف");
+            showToast(appData.lang === 'en' ? "Deleted" : "تم حذف المادة", 'danger');
 
             if (!isCloudMode || !supabaseClient || !currentUser) return;
 
@@ -1500,7 +1608,6 @@
             const endDate = document.getElementById('reportEndDate').value;
             const reportType = document.getElementById('reportTypeFilter').value;
 
-            // ترقيم القوائم بناءً على ترتيبها الأصلي في الأرشيف قبل الفلترة
             let sessions = appData.archiveSessions.map((s, index) => ({ ...s, listNumber: index + 1 }));
             let expenses = [...appData.expenses];
 
@@ -1629,7 +1736,6 @@
             document.getElementById('settingsModal').classList.add('hidden');
         }
 
-        // ضغط الصورة الشخصية وتقليص أبعادها لمنع امتلاء localStorage
         function previewProfileAvatar(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1676,7 +1782,7 @@
             renderUserSessionHeader();
             updateAllViews();
             closeSettingsModal();
-            showToast(newLang === 'en' ? "Settings saved" : "تم حفظ الإعدادات والبروفايل");
+            showToast(newLang === 'en' ? "Settings saved" : "تم حفظ الإعدادات والبروفايل", 'success');
 
             if (isCloudMode && supabaseClient && currentUser) {
                 const profilePayload = {
@@ -1698,9 +1804,13 @@
                 setSyncBar(true);
                 try {
                     if (pendingAvatarFile) {
-                        const ext = pendingAvatarFile.name.split('.').pop() || 'jpg';
-                        const filePath = `avatar_${currentUser.id}_${Date.now()}.${ext}`;
-                        const { error: upErr } = await supabaseClient.storage.from('avatars').upload(filePath, pendingAvatarFile, { upsert: true });
+                        const filePath = `avatar_${currentUser.id}_${Date.now()}.jpg`;
+                        const blobToUpload = pendingAvatarDataUrl
+                            ? await (await fetch(pendingAvatarDataUrl)).blob()
+                            : pendingAvatarFile;
+                        const { error: upErr } = await supabaseClient.storage
+                            .from('avatars')
+                            .upload(filePath, blobToUpload, { contentType: 'image/jpeg', upsert: true });
                         if (!upErr) {
                             const { data: pubData } = supabaseClient.storage.from('avatars').getPublicUrl(filePath);
                             finalAvatarUrl = pubData.publicUrl;
@@ -1710,9 +1820,13 @@
                             renderUserSessionHeader();
                         }
                     }
-                    await supabaseClient.auth.updateUser({
-                        data: { full_name: newUserName, project_name: newAppName, avatar_url: finalAvatarUrl }
-                    });
+
+                    const authMeta = { full_name: newUserName, project_name: newAppName };
+                    if (finalAvatarUrl && !finalAvatarUrl.startsWith('data:')) {
+                        authMeta.avatar_url = finalAvatarUrl;
+                    }
+                    await supabaseClient.auth.updateUser({ data: authMeta });
+
                     const { error } = await supabaseClient.from('profiles').upsert({
                         id: currentUser.id,
                         ...profilePayload
@@ -1731,13 +1845,6 @@
 
         function escapeHtml(str) {
             return String(str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-        }
-
-        function showToast(msg) {
-            const tEl = document.getElementById('toast');
-            document.getElementById('toastMessage').innerText = msg;
-            tEl.classList.remove('-translate-y-24', 'opacity-0');
-            setTimeout(() => tEl.classList.add('-translate-y-24', 'opacity-0'), 2200);
         }
 
         // --- PWA Service Worker & Smart Install Banner ---
@@ -1787,7 +1894,7 @@
             window.__deferredInstallPrompt = null;
             const banner = document.getElementById('pwa-install-banner');
             if (banner) banner.remove();
-            sendAppNotification("تطبيق دُگّان", "تم تثبيت التطبيق بنجاح على هاتفك!");
+            sendAppNotification("تطبيق دُگّان", "تم تثبيت التطبيق بنجاح على هاتفك!", 'success');
         });
 
         async function initPwaInstallPrompt() {
@@ -1809,20 +1916,21 @@
 
             const banner = document.createElement('div');
             banner.id = 'pwa-install-banner';
-            banner.style.cssText = 'position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); left: 12px; right: 12px; max-width: 440px; margin: 0 auto; z-index: 99999;';
+            banner.className = 'no-print';
+            banner.style.cssText = 'position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) + 74px); left: 12px; right: 12px; max-width: 440px; margin: 0 auto; z-index: 40;';
             banner.innerHTML = `
-                <div style="background: #0f172a; color: #fff; padding: 14px; border-radius: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.15);">
+                <div style="background: #0f172a; color: #fff; padding: 13px; border-radius: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.15);">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
                         <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                            <img src="./icon-192.png" onerror="this.src='${DEFAULT_AVATAR_SVG}'" style="width: 44px; height: 44px; border-radius: 12px; object-fit: cover; flex-shrink: 0;">
+                            <img src="./icon-192.png" onerror="this.onerror=null;this.src=DEFAULT_AVATAR_SVG" style="width: 42px; height: 42px; border-radius: 12px; object-fit: cover; flex-shrink: 0;">
                             <div style="min-width: 0;">
-                                <div style="font-weight: 800; font-size: 14px;">تثبيت تطبيق دُگّان على هاتفك</div>
+                                <div style="font-weight: 800; font-size: 13px;">تثبيت تطبيق دُگّان على هاتفك</div>
                                 <div style="font-size: 11px; color: #94a3b8;">يعمل بملء الشاشة كتطبيق مستقل وبسرعة عالية</div>
                             </div>
                         </div>
                         <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                            <button type="button" id="pwaInstallConfirmBtn" style="background: #16a34a; color: #fff; border: none; padding: 10px 14px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 13px;">تثبيت</button>
-                            <button type="button" id="pwaInstallDismissBtn" style="background: rgba(255,255,255,0.12); color: #cbd5e1; border: none; padding: 10px 12px; border-radius: 12px; cursor: pointer; font-size: 13px;">✕</button>
+                            <button type="button" id="pwaInstallConfirmBtn" style="background: #16a34a; color: #fff; border: none; padding: 9px 13px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 13px;">تثبيت</button>
+                            <button type="button" id="pwaInstallDismissBtn" style="background: rgba(255,255,255,0.12); color: #cbd5e1; border: none; padding: 9px 11px; border-radius: 12px; cursor: pointer; font-size: 13px;">✕</button>
                         </div>
                     </div>
                     <div id="pwaManualInstallGuide" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.12); font-size: 12px; color: #e2e8f0; line-height: 1.6;">
@@ -1847,9 +1955,6 @@
                 } else {
                     const guide = document.getElementById('pwaManualInstallGuide');
                     if (guide) guide.style.display = 'block';
-                }
-                if ('Notification' in window && Notification.permission === 'default') {
-                    await Notification.requestPermission();
                 }
             });
 
