@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daggan-app-v8';
+const CACHE_NAME = 'daggan-app-v9';
 const assetsToCache = [
   './',
   './index.html',
@@ -49,22 +49,10 @@ self.addEventListener('fetch', (event) => {
       .then((networkResponse) => {
         if (networkResponse && (networkResponse.ok || networkResponse.type === 'opaque')) {
           const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone)).catch(() => {});
         }
         return networkResponse;
       })
       .catch(() => caches.match(event.request))
-  );
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if ('focus' in client) return client.focus();
-      }
-      if (clients.openWindow) return clients.openWindow('./index.html');
-    })
   );
 });

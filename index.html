@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>دُگّان - إدارة المشتريات والمصروفات</title>
     <!-- إعدادات PWA وملائمة الشاشة -->
     <link rel="manifest" href="./manifest.json">
@@ -50,16 +50,18 @@
     <style>
         * {
             -webkit-tap-highlight-color: transparent;
-        }
-        button, a, input, select, label {
-            touch-action: manipulation;
+            box-sizing: border-box;
         }
         html, body {
             width: 100%;
             max-width: 100%;
             overflow-x: hidden;
             font-family: 'Cairo', sans-serif;
-            overscroll-behavior-y: contain;
+            touch-action: pan-y;
+        }
+        button, a, input, select, label {
+            touch-action: manipulation;
+            cursor: pointer;
         }
         input, select, button {
             font-size: 16px !important;
@@ -70,11 +72,13 @@
             min-width: 0;
             max-width: 100%;
         }
-        .safe-top {
-            padding-top: env(safe-area-inset-top, 0px);
+        header.app-header {
+            padding-top: max(10px, env(safe-area-inset-top, 10px));
+            pointer-events: auto;
         }
-        .safe-bottom {
-            padding-bottom: env(safe-area-inset-bottom, 12px);
+        nav.app-bottom-nav {
+            padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
+            pointer-events: auto;
         }
         @media print {
             .no-print { display: none !important; }
@@ -85,19 +89,19 @@
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-[100dvh] flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
 
     <!-- شريط مزامنة علوي خفيف لا يحجب اللمس -->
-    <div id="syncBar" class="fixed top-0 left-0 right-0 h-1 bg-emerald-500 z-50 hidden animate-pulse"></div>
+    <div id="syncBar" class="fixed top-0 left-0 right-0 h-1 bg-emerald-500 z-50 hidden animate-pulse pointer-events-none"></div>
 
     <!-- Header Navigation -->
-    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-xs safe-top no-print">
-        <div class="max-w-3xl mx-auto px-3 py-2.5 flex items-center justify-between gap-2">
+    <header class="app-header bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40 shadow-xs no-print">
+        <div class="max-w-3xl mx-auto px-3 pb-2.5 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
-                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-sm shrink-0">
-                    <i class="fa-solid fa-cart-shopping text-sm sm:text-base"></i>
+                <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-sm shrink-0">
+                    <i class="fa-solid fa-cart-shopping text-base"></i>
                 </div>
                 <div class="min-w-0">
                     <div class="flex items-center gap-1.5">
                         <h1 class="font-black text-sm sm:text-base leading-tight text-slate-900 dark:text-white truncate" id="headerProjectName">دُگّان</h1>
-                        <span id="cloudStatusBadge" class="text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800 shrink-0 inline-flex items-center gap-1">
+                        <span id="cloudStatusBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800 shrink-0 inline-flex items-center gap-1">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                             <span>متصل</span>
                         </span>
@@ -107,8 +111,13 @@
             </div>
             
             <div class="flex items-center gap-1.5 shrink-0">
+                <!-- زر تثبيت التطبيق المباشر يظهر دائماً في المتصفح ويختفي بعد التثبيت -->
+                <button type="button" id="headerInstallBtn" onclick="triggerInstallApp()" class="h-11 px-2.5 rounded-xl bg-emerald-600 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition shrink-0" title="تثبيت التطبيق">
+                    <i class="fa-solid fa-download text-xs"></i>
+                    <span class="hidden sm:inline">تثبيت</span>
+                </button>
                 <div id="userAccountArea"></div>
-                <button type="button" onclick="openSettingsModal()" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-slate-100 dark:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 flex items-center justify-center transition shrink-0" title="الإعدادات">
+                <button type="button" onclick="openSettingsModal()" class="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 flex items-center justify-center transition shrink-0" title="الإعدادات">
                     <i class="fa-solid fa-gear text-base"></i>
                 </button>
             </div>
@@ -116,7 +125,7 @@
     </header>
 
     <!-- Main Container -->
-    <main id="mainContainer" class="flex-1 max-w-3xl w-full mx-auto px-3.5 pt-4 pb-28">
+    <main id="mainContainer" class="flex-1 max-w-3xl w-full mx-auto px-3.5 pt-4 pb-32">
 
         <!-- TAB 1: SHOPPING LIST -->
         <div id="tabContent-shopping" class="space-y-4">
@@ -133,14 +142,14 @@
                 </button>
             </div>
 
-            <!-- Add Item to Cart Form (Compact Mobile Grid) -->
+            <!-- Add Item to Cart Form -->
             <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 space-y-3">
                 <div class="flex items-center justify-between">
                     <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                         <i class="fa-solid fa-circle-plus text-emerald-600"></i>
                         <span data-i18n="addToCartTitle">إضافة مادة لقائمة الشراء</span>
                     </h3>
-                    <button type="button" onclick="openMaterialModal()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1.5 rounded-xl">
+                    <button type="button" onclick="openMaterialModal()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-2 rounded-xl">
                         + <span data-i18n="quickNewMat">مادة جديدة</span>
                     </button>
                 </div>
@@ -172,7 +181,7 @@
             <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 overflow-hidden">
                 <div class="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                     <h3 class="font-bold text-sm text-slate-900 dark:text-white" data-i18n="currentCartTitle">مواد قائمة الشراء الحالية</h3>
-                    <button type="button" onclick="clearCart()" class="text-rose-600 text-xs font-bold px-2.5 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 flex items-center gap-1">
+                    <button type="button" onclick="clearCart()" class="text-rose-600 text-xs font-bold px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/50 flex items-center gap-1">
                         <i class="fa-solid fa-trash-can"></i>
                         <span data-i18n="btnClearCart">تفريغ</span>
                     </button>
@@ -355,21 +364,21 @@
     </main>
 
     <!-- Bottom Mobile Navigation Bar -->
-    <nav id="bottomNav" class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 z-30 safe-bottom shadow-lg no-print">
-        <div class="max-w-3xl mx-auto grid grid-cols-4 gap-1 px-2 py-1.5">
-            <button type="button" onclick="switchTab('shopping')" id="tabBtn-shopping" class="py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400">
+    <nav id="bottomNav" class="app-bottom-nav fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 z-40 shadow-lg no-print">
+        <div class="max-w-3xl mx-auto grid grid-cols-4 gap-1.5 px-2 pt-2">
+            <button type="button" onclick="switchTab('shopping')" id="tabBtn-shopping" class="min-h-[52px] py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400">
                 <i class="fa-solid fa-basket-shopping text-base"></i>
                 <span data-i18n="tabShopping">قائمة الشراء</span>
             </button>
-            <button type="button" onclick="switchTab('expenses')" id="tabBtn-expenses" class="py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400">
+            <button type="button" onclick="switchTab('expenses')" id="tabBtn-expenses" class="min-h-[52px] py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400">
                 <i class="fa-solid fa-wallet text-base"></i>
                 <span data-i18n="tabExpenses">المصروفات</span>
             </button>
-            <button type="button" onclick="switchTab('materials')" id="tabBtn-materials" class="py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400">
+            <button type="button" onclick="switchTab('materials')" id="tabBtn-materials" class="min-h-[52px] py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400">
                 <i class="fa-solid fa-boxes-stacked text-base"></i>
                 <span data-i18n="tabMaterials">المواد</span>
             </button>
-            <button type="button" onclick="switchTab('reports')" id="tabBtn-reports" class="py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400">
+            <button type="button" onclick="switchTab('reports')" id="tabBtn-reports" class="min-h-[52px] py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400">
                 <i class="fa-solid fa-file-invoice-dollar text-base"></i>
                 <span data-i18n="tabReports">التقارير</span>
             </button>
@@ -378,10 +387,10 @@
 
     <!-- MODAL: ADD MATERIAL -->
     <div id="materialModal" onclick="if(event.target===this) closeMaterialModal()" class="fixed inset-0 bg-slate-900/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden overflow-y-auto">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90dvh] overflow-y-auto safe-bottom">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90dvh] overflow-y-auto pb-8">
             <div class="flex items-center justify-between">
                 <h3 class="font-black text-lg text-slate-900 dark:text-white" data-i18n="btnNewMaterial">إضافة مادة جديدة</h3>
-                <button type="button" onclick="closeMaterialModal()" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" onclick="closeMaterialModal()" class="w-11 h-11 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form onsubmit="saveMaterial(event)" class="space-y-3">
                 <div>
@@ -414,13 +423,13 @@
 
     <!-- MODAL: SETTINGS & PROFILE -->
     <div id="settingsModal" onclick="if(event.target===this) closeSettingsModal()" class="fixed inset-0 bg-slate-900/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden overflow-y-auto">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90dvh] overflow-y-auto safe-bottom">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90dvh] overflow-y-auto pb-8">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
                 <h3 class="font-black text-lg text-slate-900 dark:text-white flex items-center gap-2">
                     <i class="fa-solid fa-sliders text-emerald-600"></i>
                     <span data-i18n="settingsTitle">الإعدادات والبروفايل</span>
                 </h3>
-                <button type="button" onclick="closeSettingsModal()" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" onclick="closeSettingsModal()" class="w-11 h-11 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
             <form onsubmit="saveSettings(event)" class="space-y-3.5">
@@ -464,7 +473,13 @@
                     </div>
                 </div>
 
-                <div class="pt-2 flex gap-2">
+                <!-- زر تثبيت التطبيق داخل الإعدادات -->
+                <button type="button" id="settingsInstallBtn" onclick="closeSettingsModal(); triggerInstallApp();" class="w-full min-h-[46px] bg-slate-900 dark:bg-slate-700 text-emerald-400 font-bold py-2.5 px-4 rounded-2xl flex items-center justify-center gap-2 border border-emerald-500/30">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                    <span>تثبيت التطبيق على الشاشة الرئيسية للهاتف</span>
+                </button>
+
+                <div class="pt-1 flex gap-2">
                     <button type="submit" class="flex-1 min-h-[48px] bg-emerald-600 text-white font-bold py-3 rounded-2xl transition shadow-md" data-i18n="btnSaveSettings">حفظ التغييرات</button>
                     <button type="button" onclick="logoutUser()" class="min-h-[48px] bg-rose-50 dark:bg-rose-950/60 text-rose-600 font-bold px-4 py-3 rounded-2xl transition" data-i18n="btnLogout">خروج</button>
                 </div>
@@ -472,8 +487,23 @@
         </div>
     </div>
 
+    <!-- MODAL: MANUAL INSTALL GUIDE (لأجهزة آيفون أو عند تأخر المتصفح) -->
+    <div id="installGuideModal" onclick="if(event.target===this) closeInstallGuideModal()" class="fixed inset-0 bg-slate-900/70 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 pb-8">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+                <h3 class="font-black text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-mobile-screen text-emerald-600"></i>
+                    <span>تثبيت تطبيق دُگّان على الهاتف</span>
+                </h3>
+                <button type="button" onclick="closeInstallGuideModal()" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="installGuideContent" class="text-sm text-slate-700 dark:text-slate-200 space-y-3 leading-relaxed"></div>
+            <button type="button" onclick="closeInstallGuideModal()" class="w-full min-h-[46px] bg-emerald-600 text-white font-bold rounded-2xl">فهمت</button>
+        </div>
+    </div>
+
     <!-- إشعارات داخل المنصة (In-App Notification Banner) -->
-    <div id="inAppNotification" onclick="hideInAppNotification()" class="fixed top-3 left-3 right-3 max-w-md mx-auto bg-slate-900 dark:bg-slate-800 text-white p-3.5 rounded-2xl shadow-2xl border border-emerald-500/40 flex items-center gap-3 -translate-y-32 opacity-0 pointer-events-none transition-all duration-300 z-50 cursor-pointer no-print">
+    <div id="inAppNotification" onclick="hideInAppNotification()" class="fixed top-3 left-3 right-3 max-w-md mx-auto bg-slate-900 dark:bg-slate-800 text-white p-3.5 rounded-2xl shadow-2xl border border-emerald-500/40 flex items-center gap-3 -translate-y-36 opacity-0 pointer-events-none transition-all duration-300 z-50 cursor-pointer no-print">
         <div id="inAppNotifIcon" class="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center shrink-0">
             <i class="fa-solid fa-bell text-base"></i>
         </div>
@@ -488,9 +518,9 @@
 
     <!-- JavaScript Application Logic -->
     <script>
-        const LOCAL_FALLBACK_KEY = 'daggan_procurement_data_v5';
+        const CLOUD_CACHE_KEY = 'daggan_cloud_cache_v6';
+        const LOCAL_DEMO_KEY = 'daggan_local_demo_v6';
         const DEMO_SESSION_KEY = 'restaurant_procurement_demo_mode';
-        const INSTALL_DONE_KEY = 'daggan_pwa_v5_installed';
         const SYNC_QUEUE_KEY = 'daggan_sync_queue_v5';
 
         const DEFAULT_AVATAR_SVG = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="%2316a34a"/><text x="50" y="65" font-size="45" text-anchor="middle" fill="white">👤</text></svg>';
@@ -504,17 +534,21 @@
 
         const pendingDeletedTempIds = new Set();
 
-        let appData = {
-            appName: "دُگّان",
-            userName: "مرتضى حسين",
-            avatarUrl: "",
-            materials: [],
-            activeCart: [],
-            archiveSessions: [],
-            expenses: [],
-            theme: localStorage.getItem('daggan_theme') || 'light',
-            lang: localStorage.getItem('daggan_lang') || 'ar'
-        };
+        function getDefaultAppData(isDemo = false) {
+            return {
+                appName: "دُگّان",
+                userName: isDemo ? "حساب محلي" : "مستخدم",
+                avatarUrl: "",
+                materials: [],
+                activeCart: [],
+                archiveSessions: [],
+                expenses: [],
+                theme: localStorage.getItem('daggan_theme') || 'light',
+                lang: localStorage.getItem('daggan_lang') || 'ar'
+            };
+        }
+
+        let appData = getDefaultAppData(false);
 
         const I18N = {
             ar: {
@@ -636,6 +670,13 @@
             return (I18N[lang] && I18N[lang][key]) || I18N.ar[key] || key;
         }
 
+        function getActiveStorageKey() {
+            if (isCloudMode && currentUser && currentUser.id) {
+                return `${CLOUD_CACHE_KEY}_${currentUser.id}`;
+            }
+            return LOCAL_DEMO_KEY;
+        }
+
         function getTodayISO() {
             const now = new Date();
             const yyyy = now.getFullYear();
@@ -658,11 +699,11 @@
             if (bar) bar.classList.toggle('hidden', !show);
         }
 
-        // --- إشعارات داخل المنصة فقط (In-App Notification Banner) ---
+        // --- إشعارات داخل المنصة فقط ---
         function hideInAppNotification() {
             const el = document.getElementById('inAppNotification');
             if (!el) return;
-            el.classList.add('-translate-y-32', 'opacity-0', 'pointer-events-none');
+            el.classList.add('-translate-y-36', 'opacity-0', 'pointer-events-none');
         }
 
         function showInAppNotification(title, body, type = 'success') {
@@ -673,30 +714,10 @@
             if (!el) return;
 
             const styles = {
-                success: {
-                    border: 'border-emerald-500/40',
-                    iconBg: 'bg-emerald-600/20 text-emerald-400',
-                    titleColor: 'text-emerald-400',
-                    icon: 'fa-circle-check'
-                },
-                warning: {
-                    border: 'border-amber-500/40',
-                    iconBg: 'bg-amber-500/20 text-amber-400',
-                    titleColor: 'text-amber-400',
-                    icon: 'fa-triangle-exclamation'
-                },
-                danger: {
-                    border: 'border-rose-500/40',
-                    iconBg: 'bg-rose-500/20 text-rose-400',
-                    titleColor: 'text-rose-400',
-                    icon: 'fa-trash-can'
-                },
-                info: {
-                    border: 'border-sky-500/40',
-                    iconBg: 'bg-sky-500/20 text-sky-400',
-                    titleColor: 'text-sky-400',
-                    icon: 'fa-bell'
-                }
+                success: { border: 'border-emerald-500/40', iconBg: 'bg-emerald-600/20 text-emerald-400', titleColor: 'text-emerald-400', icon: 'fa-circle-check' },
+                warning: { border: 'border-amber-500/40', iconBg: 'bg-amber-500/20 text-amber-400', titleColor: 'text-amber-400', icon: 'fa-triangle-exclamation' },
+                danger: { border: 'border-rose-500/40', iconBg: 'bg-rose-500/20 text-rose-400', titleColor: 'text-rose-400', icon: 'fa-trash-can' },
+                info: { border: 'border-sky-500/40', iconBg: 'bg-sky-500/20 text-sky-400', titleColor: 'text-sky-400', icon: 'fa-bell' }
             };
 
             const s = styles[type] || styles.success;
@@ -719,57 +740,24 @@
             showInAppNotification(appData.appName || 'دُگّان', msg, type);
         }
 
-        // إخفاء شريط التنقل السفلي عند فتح كيبورد الهاتف
         function initMobileKeyboardHandler() {
             const nav = document.getElementById('bottomNav');
-            const main = document.getElementById('mainContainer');
-            if (!nav || !main) return;
+            if (!nav || !window.visualViewport) return;
 
-            const isTextField = (el) => {
-                if (!el) return false;
-                const tag = el.tagName;
-                if (tag === 'TEXTAREA') return true;
-                if (tag === 'INPUT') {
-                    const excluded = ['date', 'file', 'checkbox', 'radio', 'button', 'submit'];
-                    return !excluded.includes((el.type || '').toLowerCase());
-                }
-                return false;
-            };
-
-            document.addEventListener('focusin', (e) => {
-                if (window.innerWidth < 768 && isTextField(e.target)) {
-                    nav.classList.add('hidden');
-                    main.classList.remove('pb-28');
-                    main.classList.add('pb-6');
-                }
-            });
-
-            document.addEventListener('focusout', () => {
-                setTimeout(() => {
-                    if (!isTextField(document.activeElement)) {
-                        nav.classList.remove('hidden');
-                        main.classList.remove('pb-6');
-                        main.classList.add('pb-28');
-                    }
-                }, 120);
+            const baseHeight = window.innerHeight;
+            window.visualViewport.addEventListener('resize', () => {
+                const keyboardOpen = window.visualViewport.height < baseHeight * 0.72;
+                nav.style.display = keyboardOpen ? 'none' : '';
             });
         }
 
-        // --- إدارة طابور المزامنة أثناء انقطاع الإنترنت ---
+        // --- إدارة طابور المزامنة ---
         function getSyncQueue() {
-            try {
-                return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]');
-            } catch (e) {
-                return [];
-            }
+            try { return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]'); } catch (e) { return []; }
         }
 
         function saveSyncQueue(queue) {
-            try {
-                localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
-            } catch (e) {
-                console.warn('Sync queue storage error:', e);
-            }
+            try { localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue)); } catch (e) {}
         }
 
         function enqueueSyncOp(op) {
@@ -796,7 +784,6 @@
             try {
                 while (queue.length > 0) {
                     const op = queue[0];
-
                     if (op.tempId && pendingDeletedTempIds.has(op.tempId)) {
                         pendingDeletedTempIds.delete(op.tempId);
                         queue.shift();
@@ -805,11 +792,7 @@
                     }
 
                     if (op.type === 'insert_material') {
-                        const { data, error } = await supabaseClient
-                            .from('materials')
-                            .insert([{ ...op.payload, user_id: currentUser.id }])
-                            .select()
-                            .single();
+                        const { data, error } = await supabaseClient.from('materials').insert([{ ...op.payload, user_id: currentUser.id }]).select().single();
                         if (error) throw error;
                         if (data) {
                             tempToRealIdMap[op.tempId] = data.id;
@@ -818,47 +801,27 @@
                         }
                     } else if (op.type === 'insert_cart') {
                         const payload = { ...op.payload, user_id: currentUser.id };
-                        if (tempToRealIdMap[payload.material_id]) {
-                            payload.material_id = tempToRealIdMap[payload.material_id];
-                        }
-                        const { data, error } = await supabaseClient
-                            .from('active_cart')
-                            .insert([payload])
-                            .select()
-                            .single();
+                        if (tempToRealIdMap[payload.material_id]) payload.material_id = tempToRealIdMap[payload.material_id];
+                        const { data, error } = await supabaseClient.from('active_cart').insert([payload]).select().single();
                         if (error) throw error;
                         if (data) {
                             const idx = appData.activeCart.findIndex(x => x.id === op.tempId);
                             if (idx !== -1) appData.activeCart[idx].id = data.id;
                         }
                     } else if (op.type === 'clear_cart') {
-                        const { error } = await supabaseClient
-                            .from('active_cart')
-                            .delete()
-                            .eq('user_id', currentUser.id);
+                        const { error } = await supabaseClient.from('active_cart').delete().eq('user_id', currentUser.id);
                         if (error) throw error;
                     } else if (op.type === 'checkout_cart') {
-                        const { data, error } = await supabaseClient
-                            .from('archive_sessions')
-                            .insert([{ ...op.payload, user_id: currentUser.id }])
-                            .select()
-                            .single();
+                        const { data, error } = await supabaseClient.from('archive_sessions').insert([{ ...op.payload, user_id: currentUser.id }]).select().single();
                         if (error) throw error;
                         if (data) {
                             const idx = appData.archiveSessions.findIndex(x => x.id === op.tempId);
                             if (idx !== -1) appData.archiveSessions[idx].id = data.id;
                         }
-                        const { error: delErr } = await supabaseClient
-                            .from('active_cart')
-                            .delete()
-                            .eq('user_id', currentUser.id);
+                        const { error: delErr } = await supabaseClient.from('active_cart').delete().eq('user_id', currentUser.id);
                         if (delErr) throw delErr;
                     } else if (op.type === 'insert_expense') {
-                        const { data, error } = await supabaseClient
-                            .from('expenses')
-                            .insert([{ ...op.payload, user_id: currentUser.id }])
-                            .select()
-                            .single();
+                        const { data, error } = await supabaseClient.from('expenses').insert([{ ...op.payload, user_id: currentUser.id }]).select().single();
                         if (error) throw error;
                         if (data) {
                             const idx = appData.expenses.findIndex(x => x.id === op.tempId);
@@ -867,25 +830,14 @@
                     } else if (op.type === 'delete_row') {
                         const realId = tempToRealIdMap[op.rowId] || op.rowId;
                         if (!String(realId).match(/^(mat_|cart_|exp_|sess_)/)) {
-                            const { error } = await supabaseClient
-                                .from(op.table)
-                                .delete()
-                                .eq('id', realId)
-                                .eq('user_id', currentUser.id);
+                            const { error } = await supabaseClient.from(op.table).delete().eq('id', realId).eq('user_id', currentUser.id);
                             if (error) throw error;
                         }
                     } else if (op.type === 'update_profile') {
-                        const authMeta = {
-                            full_name: op.payload.full_name,
-                            project_name: op.payload.project_name
-                        };
-                        if (op.payload.avatar_url && !op.payload.avatar_url.startsWith('data:')) {
-                            authMeta.avatar_url = op.payload.avatar_url;
-                        }
+                        const authMeta = { full_name: op.payload.full_name, project_name: op.payload.project_name };
+                        if (op.payload.avatar_url && !op.payload.avatar_url.startsWith('data:')) authMeta.avatar_url = op.payload.avatar_url;
                         await supabaseClient.auth.updateUser({ data: authMeta });
-                        const { error } = await supabaseClient
-                            .from('profiles')
-                            .upsert({ ...op.payload, id: currentUser.id });
+                        const { error } = await supabaseClient.from('profiles').upsert({ ...op.payload, id: currentUser.id });
                         if (error) throw error;
                     }
 
@@ -894,7 +846,7 @@
                     saveLocalData();
                 }
             } catch (err) {
-                console.warn('Paused sync queue due to network/server error:', err);
+                console.warn('Sync paused:', err);
             } finally {
                 isFlushingQueue = false;
                 setSyncBar(false);
@@ -927,27 +879,34 @@
 
             const isDemo = localStorage.getItem(DEMO_SESSION_KEY) === 'true';
 
-            if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            if (isDemo) {
+                currentUser = null;
+                isCloudMode = false;
+                appData = getDefaultAppData(true);
+                loadLocalData(false);
+            } else if (typeof supabaseClient !== 'undefined' && supabaseClient) {
                 try {
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (session && session.user) {
                         currentUser = session.user;
                         isCloudMode = true;
+                        appData = getDefaultAppData(false);
+                        const meta = currentUser.user_metadata || {};
+                        appData.userName = meta.full_name || meta.username || currentUser.email;
+                        appData.appName = meta.project_name || "دُگّان";
                         loadLocalData(true);
                         await loadDataFromSupabase();
-                    } else if (!isDemo) {
-                        window.location.href = './login.html';
-                        return;
                     } else {
-                        isCloudMode = false;
-                        loadLocalData(false);
+                        window.location.replace('./login.html');
+                        return;
                     }
                 } catch (e) {
-                    isCloudMode = false;
-                    loadLocalData(false);
+                    window.location.replace('./login.html');
+                    return;
                 }
             } else {
                 isCloudMode = false;
+                appData = getDefaultAppData(true);
                 loadLocalData(false);
             }
 
@@ -958,7 +917,8 @@
         };
 
         function loadLocalData(skipDefaultSeed = false) {
-            const saved = localStorage.getItem(LOCAL_FALLBACK_KEY);
+            const storageKey = getActiveStorageKey();
+            const saved = localStorage.getItem(storageKey);
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved);
@@ -976,15 +936,13 @@
         }
 
         function saveLocalData() {
+            const storageKey = getActiveStorageKey();
             try {
-                localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(appData));
+                localStorage.setItem(storageKey, JSON.stringify(appData));
             } catch (e) {
-                console.warn('localStorage quota warning:', e);
                 if (appData.avatarUrl && appData.avatarUrl.startsWith('data:')) {
                     appData.avatarUrl = '';
-                    try {
-                        localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(appData));
-                    } catch (err) {}
+                    try { localStorage.setItem(storageKey, JSON.stringify(appData)); } catch (err) {}
                 }
             }
         }
@@ -1003,9 +961,7 @@
                     supabaseClient.from('expenses').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true })
                 ]);
 
-                if (getSyncQueue().length > 0) {
-                    return;
-                }
+                if (getSyncQueue().length > 0) return;
 
                 const meta = currentUser.user_metadata || {};
                 appData.appName = profileRes.data?.project_name || meta.project_name || appData.appName || "دُگّان";
@@ -1014,18 +970,10 @@
                 appData.theme = profileRes.data?.theme || localStorage.getItem('daggan_theme') || 'light';
                 appData.lang = profileRes.data?.lang || localStorage.getItem('daggan_lang') || 'ar';
 
-                if (!matRes.error) {
-                    appData.materials = (matRes.data || []).map(m => ({ id: m.id, name: m.name, unit: m.unit, defaultPrice: Number(m.default_price || 0) }));
-                }
-                if (!cartRes.error) {
-                    appData.activeCart = (cartRes.data || []).map(c => ({ id: c.id, materialId: c.material_id, name: c.name, unit: c.unit, qty: Number(c.qty), price: Number(c.price) }));
-                }
-                if (!archiveRes.error) {
-                    appData.archiveSessions = (archiveRes.data || []).map(s => ({ id: s.id, date: s.date, timestamp: s.timestamp_label, items: s.items || [], total: Number(s.total) }));
-                }
-                if (!expRes.error) {
-                    appData.expenses = (expRes.data || []).map(ex => ({ id: ex.id, title: ex.title, category: ex.category, amount: Number(ex.amount), date: ex.date, notes: ex.notes || '' }));
-                }
+                if (!matRes.error) appData.materials = (matRes.data || []).map(m => ({ id: m.id, name: m.name, unit: m.unit, defaultPrice: Number(m.default_price || 0) }));
+                if (!cartRes.error) appData.activeCart = (cartRes.data || []).map(c => ({ id: c.id, materialId: c.material_id, name: c.name, unit: c.unit, qty: Number(c.qty), price: Number(c.price) }));
+                if (!archiveRes.error) appData.archiveSessions = (archiveRes.data || []).map(s => ({ id: s.id, date: s.date, timestamp: s.timestamp_label, items: s.items || [], total: Number(s.total) }));
+                if (!expRes.error) appData.expenses = (expRes.data || []).map(ex => ({ id: ex.id, title: ex.title, category: ex.category, amount: Number(ex.amount), date: ex.date, notes: ex.notes || '' }));
                 saveLocalData();
             } catch (err) {
                 loadLocalData(true);
@@ -1035,29 +983,22 @@
         }
 
         function applyThemeAndLang() {
-            if (appData.theme === 'dark') {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-
+            document.documentElement.classList.toggle('dark', appData.theme === 'dark');
             const lang = appData.lang || 'ar';
             document.documentElement.lang = lang;
             document.documentElement.dir = lang === 'en' ? 'ltr' : 'rtl';
-
             document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                el.innerText = t(key);
+                el.innerText = t(el.getAttribute('data-i18n'));
             });
         }
 
         function switchTab(tabId) {
             ['shopping', 'expenses', 'materials', 'reports'].forEach(tId => {
                 document.getElementById(`tabContent-${tId}`).classList.add('hidden');
-                document.getElementById(`tabBtn-${tId}`).className = "py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400";
+                document.getElementById(`tabBtn-${tId}`).className = "min-h-[52px] py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400";
             });
             document.getElementById(`tabContent-${tabId}`).classList.remove('hidden');
-            document.getElementById(`tabBtn-${tabId}`).className = "py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400";
+            document.getElementById(`tabBtn-${tabId}`).className = "min-h-[52px] py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400";
         }
 
         function renderUserSessionHeader() {
@@ -1066,44 +1007,37 @@
             const pendingCount = getSyncQueue().length;
 
             if (!isCloudMode || !currentUser) {
-                badge.className = "text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 shrink-0 inline-flex items-center gap-1";
+                badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 shrink-0 inline-flex items-center gap-1";
                 badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span>محلي</span>`;
             } else if (!navigator.onLine || pendingCount > 0) {
-                badge.className = "text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 shrink-0 inline-flex items-center gap-1";
+                badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 shrink-0 inline-flex items-center gap-1";
                 badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span><span>${pendingCount > 0 ? `مزامنة (${pendingCount})` : 'غير متصل'}</span>`;
             } else {
-                badge.className = "text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800 shrink-0 inline-flex items-center gap-1";
+                badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800 shrink-0 inline-flex items-center gap-1";
                 badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span>متصل</span>`;
             }
 
             const avatarSrc = appData.avatarUrl || DEFAULT_AVATAR_SVG;
             container.innerHTML = `
-                <button type="button" onclick="openSettingsModal()" class="h-10 sm:h-11 flex items-center gap-1.5 sm:gap-2 bg-emerald-50 dark:bg-emerald-950/60 active:scale-95 border border-emerald-200 dark:border-emerald-800 px-2 sm:px-2.5 rounded-xl transition">
+                <button type="button" onclick="openSettingsModal()" class="h-11 flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 active:scale-95 border border-emerald-200 dark:border-emerald-800 px-2 rounded-xl transition">
                     <img src="${escapeHtml(avatarSrc)}" onerror="this.onerror=null;this.src=DEFAULT_AVATAR_SVG" class="w-7 h-7 rounded-full object-cover border border-emerald-400 shrink-0">
-                    <span class="text-xs font-bold text-emerald-900 dark:text-emerald-200 truncate max-w-[68px] sm:max-w-[100px]">${escapeHtml(appData.userName)}</span>
+                    <span class="text-xs font-bold text-emerald-900 dark:text-emerald-200 truncate max-w-[65px] sm:max-w-[100px]">${escapeHtml(appData.userName)}</span>
                 </button>`;
         }
 
         async function logoutUser() {
             if (!confirm(appData.lang === 'en' ? "Logout now?" : "هل تريد تسجيل الخروج؟")) return;
-
             try {
                 if (typeof supabaseClient !== 'undefined' && supabaseClient) {
                     await supabaseClient.auth.signOut({ scope: 'local' });
                 }
-            } catch (err) {
-                console.warn('SignOut warning:', err);
-            }
+            } catch (err) {}
 
-            // مسح أي بقايا جلسة مخزنة في المتصفح لضمان عدم العودة التلقائية
             Object.keys(localStorage).forEach((key) => {
-                if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
-                    localStorage.removeItem(key);
-                }
+                if (key.startsWith('sb-') && key.endsWith('-auth-token')) localStorage.removeItem(key);
             });
             localStorage.removeItem(DEMO_SESSION_KEY);
             sessionStorage.clear();
-
             window.location.replace('./login.html');
         }
 
@@ -1146,9 +1080,7 @@
             const price = parseFloat(document.getElementById('cartPrice').value);
 
             const tempId = 'cart_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-            const newItem = { id: tempId, materialId: matId, name, unit, qty, price };
-
-            appData.activeCart.push(newItem);
+            appData.activeCart.push({ id: tempId, materialId: matId, name, unit, qty, price });
             saveLocalData();
             renderCartList();
 
@@ -1165,11 +1097,7 @@
                 }
                 setSyncBar(true);
                 try {
-                    const { data, error } = await supabaseClient
-                        .from('active_cart')
-                        .insert([{ user_id: currentUser.id, ...payload }])
-                        .select()
-                        .single();
+                    const { data, error } = await supabaseClient.from('active_cart').insert([{ user_id: currentUser.id, ...payload }]).select().single();
                     if (error) throw error;
                     if (data) {
                         if (pendingDeletedTempIds.has(tempId)) {
@@ -1182,9 +1110,7 @@
                         }
                     }
                 } catch (err) {
-                    if (!pendingDeletedTempIds.has(tempId)) {
-                        enqueueSyncOp({ tempId, type: 'insert_cart', payload });
-                    }
+                    if (!pendingDeletedTempIds.has(tempId)) enqueueSyncOp({ tempId, type: 'insert_cart', payload });
                 } finally {
                     setSyncBar(false);
                 }
@@ -1231,18 +1157,15 @@
             showToast(appData.lang === 'en' ? "Removed" : "تمت إزالة المادة من القائمة", 'danger');
 
             if (!isCloudMode || !supabaseClient || !currentUser) return;
-
             if (String(id).startsWith('cart_')) {
                 pendingDeletedTempIds.add(id);
                 removeQueuedOpByTempId(id);
                 return;
             }
-
             if (!navigator.onLine) {
                 enqueueSyncOp({ type: 'delete_row', table: 'active_cart', rowId: id });
                 return;
             }
-
             setSyncBar(true);
             try {
                 const { error } = await supabaseClient.from('active_cart').delete().eq('id', id).eq('user_id', currentUser.id);
@@ -1320,11 +1243,7 @@
                 }
                 setSyncBar(true);
                 try {
-                    const { data, error } = await supabaseClient
-                        .from('archive_sessions')
-                        .insert([{ user_id: currentUser.id, ...payload }])
-                        .select()
-                        .single();
+                    const { data, error } = await supabaseClient.from('archive_sessions').insert([{ user_id: currentUser.id, ...payload }]).select().single();
                     if (error) throw error;
                     if (data) {
                         const idx = appData.archiveSessions.findIndex(x => x.id === tempId);
@@ -1367,11 +1286,7 @@
                 }
                 setSyncBar(true);
                 try {
-                    const { data, error } = await supabaseClient
-                        .from('expenses')
-                        .insert([{ user_id: currentUser.id, ...payload }])
-                        .select()
-                        .single();
+                    const { data, error } = await supabaseClient.from('expenses').insert([{ user_id: currentUser.id, ...payload }]).select().single();
                     if (error) throw error;
                     if (data) {
                         if (pendingDeletedTempIds.has(tempId)) {
@@ -1384,9 +1299,7 @@
                         }
                     }
                 } catch (err) {
-                    if (!pendingDeletedTempIds.has(tempId)) {
-                        enqueueSyncOp({ tempId, type: 'insert_expense', payload });
-                    }
+                    if (!pendingDeletedTempIds.has(tempId)) enqueueSyncOp({ tempId, type: 'insert_expense', payload });
                 } finally {
                     setSyncBar(false);
                 }
@@ -1403,7 +1316,6 @@
         function renderExpensesList() {
             const container = document.getElementById('expensesListContainer');
             const today = getTodayISO();
-
             const todayTotal = appData.expenses.filter(ex => ex.date === today).reduce((sum, ex) => sum + ex.amount, 0);
             const allTotal = appData.expenses.reduce((sum, ex) => sum + ex.amount, 0);
 
@@ -1458,18 +1370,15 @@
             showToast(appData.lang === 'en' ? "Deleted" : "تم حذف المصروف", 'danger');
 
             if (!isCloudMode || !supabaseClient || !currentUser) return;
-
             if (String(id).startsWith('exp_')) {
                 pendingDeletedTempIds.add(id);
                 removeQueuedOpByTempId(id);
                 return;
             }
-
             if (!navigator.onLine) {
                 enqueueSyncOp({ type: 'delete_row', table: 'expenses', rowId: id });
                 return;
             }
-
             setSyncBar(true);
             try {
                 const { error } = await supabaseClient.from('expenses').delete().eq('id', id).eq('user_id', currentUser.id);
@@ -1538,11 +1447,7 @@
                 }
                 setSyncBar(true);
                 try {
-                    const { data, error } = await supabaseClient
-                        .from('materials')
-                        .insert([{ user_id: currentUser.id, ...payload }])
-                        .select()
-                        .single();
+                    const { data, error } = await supabaseClient.from('materials').insert([{ user_id: currentUser.id, ...payload }]).select().single();
                     if (error) throw error;
                     if (data) {
                         if (pendingDeletedTempIds.has(tempId)) {
@@ -1556,9 +1461,7 @@
                         }
                     }
                 } catch (err) {
-                    if (!pendingDeletedTempIds.has(tempId)) {
-                        enqueueSyncOp({ tempId, type: 'insert_material', payload });
-                    }
+                    if (!pendingDeletedTempIds.has(tempId)) enqueueSyncOp({ tempId, type: 'insert_material', payload });
                 } finally {
                     setSyncBar(false);
                 }
@@ -1573,18 +1476,15 @@
             showToast(appData.lang === 'en' ? "Deleted" : "تم حذف المادة", 'danger');
 
             if (!isCloudMode || !supabaseClient || !currentUser) return;
-
             if (String(id).startsWith('mat_')) {
                 pendingDeletedTempIds.add(id);
                 removeQueuedOpByTempId(id);
                 return;
             }
-
             if (!navigator.onLine) {
                 enqueueSyncOp({ type: 'delete_row', table: 'materials', rowId: id });
                 return;
             }
-
             setSyncBar(true);
             try {
                 const { error } = await supabaseClient.from('materials').delete().eq('id', id).eq('user_id', currentUser.id);
@@ -1620,10 +1520,8 @@
                 expenses = expenses.filter(ex => ex.date <= endDate);
             }
 
-            const purchasesSum = (reportType === 'all' || reportType === 'purchases')
-                ? sessions.reduce((sum, s) => sum + Number(s.total), 0) : 0;
-            const expensesSum = (reportType === 'all' || reportType === 'expenses')
-                ? expenses.reduce((sum, ex) => sum + Number(ex.amount), 0) : 0;
+            const purchasesSum = (reportType === 'all' || reportType === 'purchases') ? sessions.reduce((sum, s) => sum + Number(s.total), 0) : 0;
+            const expensesSum = (reportType === 'all' || reportType === 'expenses') ? expenses.reduce((sum, ex) => sum + Number(ex.amount), 0) : 0;
 
             document.getElementById('repPurchasesTotal').innerText = purchasesSum.toLocaleString() + ' د.ع';
             document.getElementById('repExpensesTotal').innerText = expensesSum.toLocaleString() + ' د.ع';
@@ -1658,22 +1556,16 @@
                         <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 space-y-2.5">
                             <div class="flex items-center justify-between gap-2">
                                 <div class="flex items-center gap-2.5 min-w-0">
-                                    <div class="px-2.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shrink-0">
-                                        ${t('listNumber')} #${s.listNumber}
-                                    </div>
+                                    <div class="px-2.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shrink-0">${t('listNumber')} #${s.listNumber}</div>
                                     <div class="min-w-0">
                                         <div class="font-black text-slate-900 dark:text-white text-sm">${Number(s.total).toLocaleString()} د.ع</div>
-                                        <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                                            <i class="fa-regular fa-clock ml-1"></i>${escapeHtml(s.timestamp || s.date)}
-                                        </div>
+                                        <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate"><i class="fa-regular fa-clock ml-1"></i>${escapeHtml(s.timestamp || s.date)}</div>
                                     </div>
                                 </div>
                                 <button type="button" onclick="toggleInvoiceDetails('${escapeHtml(detailBoxId)}')" class="min-h-[40px] bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 shrink-0 no-print">
-                                    <i class="fa-solid fa-list-ul"></i>
-                                    <span>${t('btnDetails')}</span>
+                                    <i class="fa-solid fa-list-ul"></i><span>${t('btnDetails')}</span>
                                 </button>
                             </div>
-
                             <div id="${escapeHtml(detailBoxId)}" class="hidden bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1.5">
                                 <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-1.5 text-[11px] font-bold text-slate-500">
                                     <span>${t('purchasedItemsHeader')}</span>
@@ -1698,22 +1590,14 @@
                             <span class="font-black text-amber-700 dark:text-amber-400">${Number(ex.amount).toLocaleString()} د.ع</span>
                         </div>`;
                 });
-
                 html += `
                     <div class="p-3.5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 space-y-2">
-                        <div class="font-bold text-amber-900 dark:text-amber-300 text-xs flex items-center gap-1.5">
-                            <i class="fa-solid fa-wallet"></i><span>${t('expensesRecordTitle')} (${expenses.length})</span>
-                        </div>
-                        <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-amber-100 dark:border-slate-700">
-                            ${expRows}
-                        </div>
+                        <div class="font-bold text-amber-900 dark:text-amber-300 text-xs flex items-center gap-1.5"><i class="fa-solid fa-wallet"></i><span>${t('expensesRecordTitle')} (${expenses.length})</span></div>
+                        <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-amber-100 dark:border-slate-700">${expRows}</div>
                     </div>`;
             }
 
-            if (!hasAny) {
-                html = `<p class="text-xs text-slate-400 text-center py-6">${appData.lang === 'en' ? 'No records found in this period' : 'لا توجد سجلات في هذه الفترة'}</p>`;
-            }
-
+            if (!hasAny) html = `<p class="text-xs text-slate-400 text-center py-6">${appData.lang === 'en' ? 'No records found in this period' : 'لا توجد سجلات في هذه الفترة'}</p>`;
             container.innerHTML = html;
             document.getElementById('reportResultContainer').classList.remove('hidden');
         }
@@ -1749,8 +1633,7 @@
                     const scale = Math.min(maxDim / img.width, maxDim / img.height, 1);
                     canvas.width = Math.round(img.width * scale);
                     canvas.height = Math.round(img.height * scale);
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
                     pendingAvatarDataUrl = canvas.toDataURL('image/jpeg', 0.75);
                     document.getElementById('settingsAvatarPreview').src = pendingAvatarDataUrl;
                 };
@@ -1767,7 +1650,6 @@
             const newLang = document.getElementById('settingLanguage').value;
 
             let finalAvatarUrl = pendingAvatarDataUrl || appData.avatarUrl;
-
             appData.appName = newAppName;
             appData.userName = newUserName;
             appData.avatarUrl = finalAvatarUrl;
@@ -1805,12 +1687,8 @@
                 try {
                     if (pendingAvatarFile) {
                         const filePath = `avatar_${currentUser.id}_${Date.now()}.jpg`;
-                        const blobToUpload = pendingAvatarDataUrl
-                            ? await (await fetch(pendingAvatarDataUrl)).blob()
-                            : pendingAvatarFile;
-                        const { error: upErr } = await supabaseClient.storage
-                            .from('avatars')
-                            .upload(filePath, blobToUpload, { contentType: 'image/jpeg', upsert: true });
+                        const blobToUpload = pendingAvatarDataUrl ? await (await fetch(pendingAvatarDataUrl)).blob() : pendingAvatarFile;
+                        const { error: upErr } = await supabaseClient.storage.from('avatars').upload(filePath, blobToUpload, { contentType: 'image/jpeg', upsert: true });
                         if (!upErr) {
                             const { data: pubData } = supabaseClient.storage.from('avatars').getPublicUrl(filePath);
                             finalAvatarUrl = pubData.publicUrl;
@@ -1822,15 +1700,10 @@
                     }
 
                     const authMeta = { full_name: newUserName, project_name: newAppName };
-                    if (finalAvatarUrl && !finalAvatarUrl.startsWith('data:')) {
-                        authMeta.avatar_url = finalAvatarUrl;
-                    }
+                    if (finalAvatarUrl && !finalAvatarUrl.startsWith('data:')) authMeta.avatar_url = finalAvatarUrl;
                     await supabaseClient.auth.updateUser({ data: authMeta });
 
-                    const { error } = await supabaseClient.from('profiles').upsert({
-                        id: currentUser.id,
-                        ...profilePayload
-                    });
+                    const { error } = await supabaseClient.from('profiles').upsert({ id: currentUser.id, ...profilePayload });
                     if (error) throw error;
                 } catch (err) {
                     enqueueSyncOp({ type: 'update_profile', payload: profilePayload });
@@ -1847,7 +1720,7 @@
             return String(str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
 
-        // --- PWA Service Worker & Smart Install Banner ---
+        // --- PWA Service Worker & التثبيت الفوري على الهواتف ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js').catch(() => {});
@@ -1863,105 +1736,118 @@
             );
         }
 
-        async function isAppAlreadyInstalled() {
+        function initPwaInstallPrompt() {
+            const headerBtn = document.getElementById('headerInstallBtn');
+            const settingsBtn = document.getElementById('settingsInstallBtn');
+
             if (isRunningStandalone()) {
-                localStorage.setItem(INSTALL_DONE_KEY, 'true');
-                return true;
+                if (headerBtn) headerBtn.classList.add('hidden');
+                if (settingsBtn) settingsBtn.classList.add('hidden');
+                return;
             }
-            if (localStorage.getItem(INSTALL_DONE_KEY) === 'true') {
-                return true;
-            }
-            if ('getInstalledRelatedApps' in navigator) {
-                try {
-                    const related = await navigator.getInstalledRelatedApps();
-                    if (related && related.length > 0) {
-                        localStorage.setItem(INSTALL_DONE_KEY, 'true');
-                        return true;
-                    }
-                } catch (e) {}
-            }
-            return false;
+
+            setTimeout(() => {
+                if (!isRunningStandalone()) {
+                    showInstallPromptBanner();
+                }
+            }, 800);
         }
 
         window.onInstallPromptReady = function() {
-            if (!isRunningStandalone() && localStorage.getItem(INSTALL_DONE_KEY) !== 'true') {
+            if (!isRunningStandalone()) {
                 showInstallPromptBanner();
             }
         };
 
         window.addEventListener('appinstalled', () => {
-            localStorage.setItem(INSTALL_DONE_KEY, 'true');
             window.__deferredInstallPrompt = null;
             const banner = document.getElementById('pwa-install-banner');
             if (banner) banner.remove();
-            sendAppNotification("تطبيق دُگّان", "تم تثبيت التطبيق بنجاح على هاتفك!", 'success');
+            const headerBtn = document.getElementById('headerInstallBtn');
+            const settingsBtn = document.getElementById('settingsInstallBtn');
+            if (headerBtn) headerBtn.classList.add('hidden');
+            if (settingsBtn) settingsBtn.classList.add('hidden');
+            sendAppNotification("تطبيق دُگّان", "تم تثبيت التطبيق بنجاح على شاشة هاتفك!", 'success');
         });
 
-        async function initPwaInstallPrompt() {
-            const installed = await isAppAlreadyInstalled();
-            if (installed) return;
-
-            if (sessionStorage.getItem('daggan_install_banner_dismissed') === 'true') return;
-
-            setTimeout(async () => {
-                if (!(await isAppAlreadyInstalled())) {
-                    showInstallPromptBanner();
+        async function triggerInstallApp() {
+            const promptEvent = window.__deferredInstallPrompt;
+            if (promptEvent) {
+                promptEvent.prompt();
+                const { outcome } = await promptEvent.userChoice;
+                if (outcome === 'accepted') {
+                    const banner = document.getElementById('pwa-install-banner');
+                    if (banner) banner.remove();
                 }
-            }, 600);
+                window.__deferredInstallPrompt = null;
+                return;
+            }
+            openInstallGuideModal();
+        }
+
+        function openInstallGuideModal() {
+            const modal = document.getElementById('installGuideModal');
+            const content = document.getElementById('installGuideContent');
+            const ua = navigator.userAgent;
+            const isIOS = /iPhone|iPad|iPod/i.test(ua);
+            const isSamsung = /SamsungBrowser/i.test(ua);
+
+            if (isIOS) {
+                content.innerHTML = `
+                    <p class="font-bold text-emerald-600">التثبيت على أجهزة آيفون (Safari):</p>
+                    <ol class="list-decimal pr-5 space-y-2">
+                        <li>اضغط على أيقونة <b>المشاركة (Share)</b> <i class="fa-solid fa-arrow-up-from-bracket text-emerald-600"></i> أسفل الشاشة.</li>
+                        <li>اسحب القائمة للأسفل واختر <b>"إضافة إلى الشاشة الرئيسية" (Add to Home Screen)</b>.</li>
+                        <li>اضغط على <b>"إضافة" (Add)</b> أعلى الشاشة وسيظهر كتطبيق مستقل.</li>
+                    </ol>`;
+            } else if (isSamsung) {
+                content.innerHTML = `
+                    <p class="font-bold text-emerald-600">التثبيت في متصفح سامسونج (Samsung Internet):</p>
+                    <ol class="list-decimal pr-5 space-y-2">
+                        <li>اضغط على أيقونة <b>القائمة (☰)</b> أسفل يسار الشاشة أو أيقونة <b>التنزيل</b> في شريط العنوان.</li>
+                        <li>اختر <b>"إضافة الصفحة إلى" (Add page to)</b>.</li>
+                        <li>اختر <b>"الشاشة الرئيسية" (Home screen)</b> ثم اضغط <b>إضافة</b>.</li>
+                    </ol>`;
+            } else {
+                content.innerHTML = `
+                    <p class="font-bold text-emerald-600">التثبيت في متصفح كروم (Chrome - أندرويد):</p>
+                    <ol class="list-decimal pr-5 space-y-2">
+                        <li>اضغط على النقاط الثلاث <b>(⋮)</b> أعلى يسار المتصفح.</li>
+                        <li>اختر <b>"تثبيت التطبيق" (Install app)</b> أو <b>"الإضافة إلى الشاشة الرئيسية"</b>.</li>
+                        <li>اضغط <b>تثبيت (Install)</b> وسيظهر التطبيق بأيقونته الكاملة على هاتفك.</li>
+                    </ol>`;
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeInstallGuideModal() {
+            document.getElementById('installGuideModal').classList.add('hidden');
         }
 
         function showInstallPromptBanner() {
             if (document.getElementById('pwa-install-banner') || isRunningStandalone()) return;
-            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
             const banner = document.createElement('div');
             banner.id = 'pwa-install-banner';
             banner.className = 'no-print';
-            banner.style.cssText = 'position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) + 74px); left: 12px; right: 12px; max-width: 440px; margin: 0 auto; z-index: 40;';
+            banner.style.cssText = 'position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); left: 12px; right: 12px; max-width: 440px; margin: 0 auto; z-index: 40;';
             banner.innerHTML = `
-                <div style="background: #0f172a; color: #fff; padding: 13px; border-radius: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.15);">
+                <div style="background: #0f172a; color: #fff; padding: 13px; border-radius: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.45); border: 1px solid rgba(16,185,129,0.4);">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
                         <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
                             <img src="./icon-192.png" onerror="this.onerror=null;this.src=DEFAULT_AVATAR_SVG" style="width: 42px; height: 42px; border-radius: 12px; object-fit: cover; flex-shrink: 0;">
                             <div style="min-width: 0;">
                                 <div style="font-weight: 800; font-size: 13px;">تثبيت تطبيق دُگّان على هاتفك</div>
-                                <div style="font-size: 11px; color: #94a3b8;">يعمل بملء الشاشة كتطبيق مستقل وبسرعة عالية</div>
+                                <div style="font-size: 11px; color: #94a3b8;">يعمل بملء الشاشة كتطبيق مستقل</div>
                             </div>
                         </div>
                         <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                            <button type="button" id="pwaInstallConfirmBtn" style="background: #16a34a; color: #fff; border: none; padding: 9px 13px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 13px;">تثبيت</button>
-                            <button type="button" id="pwaInstallDismissBtn" style="background: rgba(255,255,255,0.12); color: #cbd5e1; border: none; padding: 9px 11px; border-radius: 12px; cursor: pointer; font-size: 13px;">✕</button>
+                            <button type="button" onclick="triggerInstallApp()" style="background: #16a34a; color: #fff; border: none; padding: 9px 13px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 13px;">تثبيت</button>
+                            <button type="button" onclick="document.getElementById('pwa-install-banner')?.remove()" style="background: rgba(255,255,255,0.12); color: #cbd5e1; border: none; padding: 9px 11px; border-radius: 12px; cursor: pointer; font-size: 13px;">✕</button>
                         </div>
-                    </div>
-                    <div id="pwaManualInstallGuide" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.12); font-size: 12px; color: #e2e8f0; line-height: 1.6;">
-                        ${isIOS
-                            ? '• في متصفح <b>Safari</b>: اضغط على زر <b>المشاركة (Share)</b> أسفل الشاشة ثم اختر <b>"إضافة إلى الشاشة الرئيسية" (Add to Home Screen)</b>.'
-                            : '• في متصفح <b>Chrome</b>: اضغط على النقاط الثلاث <b>(⋮)</b> أعلى الشاشة ثم اختر <b>"تثبيت التطبيق"</b> أو <b>"الإضافة إلى الشاشة الرئيسية"</b>.'
-                        }
                     </div>
                 </div>`;
             document.body.appendChild(banner);
-
-            document.getElementById('pwaInstallConfirmBtn').addEventListener('click', async () => {
-                const promptEvent = window.__deferredInstallPrompt;
-                if (promptEvent) {
-                    promptEvent.prompt();
-                    const { outcome } = await promptEvent.userChoice;
-                    if (outcome === 'accepted') {
-                        localStorage.setItem(INSTALL_DONE_KEY, 'true');
-                        banner.remove();
-                    }
-                    window.__deferredInstallPrompt = null;
-                } else {
-                    const guide = document.getElementById('pwaManualInstallGuide');
-                    if (guide) guide.style.display = 'block';
-                }
-            });
-
-            document.getElementById('pwaInstallDismissBtn').addEventListener('click', () => {
-                sessionStorage.setItem('daggan_install_banner_dismissed', 'true');
-                banner.remove();
-            });
         }
     </script>
 </body>
