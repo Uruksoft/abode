@@ -11,9 +11,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="دُگّان">
-    <link rel="apple-touch-icon" href="./icon-192.png">
 
-    <!-- تطبيق المظهر الليلي والتقاط حدث التثبيت مبكراً -->
+    <!-- تطبيق المظهر الليلي والتقاط حدث التثبيت المباشر -->
     <script>
         if (localStorage.getItem('daggan_theme') === 'dark') {
             document.documentElement.classList.add('dark');
@@ -111,10 +110,9 @@
             </div>
             
             <div class="flex items-center gap-1.5 shrink-0">
-                <!-- زر تثبيت التطبيق المباشر يظهر دائماً في المتصفح ويختفي بعد التثبيت -->
-                <button type="button" id="headerInstallBtn" onclick="triggerInstallApp()" class="h-11 px-2.5 rounded-xl bg-emerald-600 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition shrink-0" title="تثبيت التطبيق">
-                    <i class="fa-solid fa-download text-xs"></i>
-                    <span class="hidden sm:inline">تثبيت</span>
+                <!-- أيقونة الإعلانات المستقبلية -->
+                <button type="button" onclick="openFutureAdsModal()" class="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 active:scale-95 text-amber-600 dark:text-amber-400 flex items-center justify-center transition shrink-0" title="مساحة إعلانية">
+                    <i class="fa-solid fa-bullhorn text-base"></i>
                 </button>
                 <div id="userAccountArea"></div>
                 <button type="button" onclick="openSettingsModal()" class="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 flex items-center justify-center transition shrink-0" title="الإعدادات">
@@ -385,6 +383,21 @@
         </div>
     </nav>
 
+    <!-- MODAL: FUTURE ADS -->
+    <div id="futureAdsModal" onclick="if(event.target===this) closeFutureAdsModal()" class="fixed inset-0 bg-slate-900/65 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center space-y-4 border border-amber-200 dark:border-amber-800/50">
+            <div class="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto text-2xl shadow-sm">
+                <i class="fa-solid fa-bullhorn"></i>
+            </div>
+            <div class="space-y-1">
+                <span class="inline-block text-[11px] font-bold px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">مساحة إعلانية</span>
+                <h3 class="font-black text-xl text-slate-900 dark:text-white pt-1">قريباً.. ضع إعلانك هنا</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">هذه المساحة مخصصة للعروض التجارية وإعلانات الموردين والشركات مستقبلاً.</p>
+            </div>
+            <button type="button" onclick="closeFutureAdsModal()" class="w-full min-h-[46px] bg-emerald-600 active:scale-95 text-white font-bold rounded-2xl transition">إغلاق</button>
+        </div>
+    </div>
+
     <!-- MODAL: ADD MATERIAL -->
     <div id="materialModal" onclick="if(event.target===this) closeMaterialModal()" class="fixed inset-0 bg-slate-900/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden overflow-y-auto">
         <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90dvh] overflow-y-auto pb-8">
@@ -438,7 +451,7 @@
                     <div class="text-xs font-bold text-emerald-600 dark:text-emerald-400" data-i18n="profileSectionTitle">الملف الشخصي (البروفايل)</div>
                     <div class="flex items-center gap-3">
                         <div class="relative shrink-0">
-                            <img id="settingsAvatarPreview" src="./icon-192.png" onerror="this.onerror=null;this.src=DEFAULT_AVATAR_SVG" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-500 bg-white">
+                            <img id="settingsAvatarPreview" src="" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-500 bg-white">
                             <label for="settingsAvatarInput" class="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center cursor-pointer shadow-md">
                                 <i class="fa-solid fa-camera text-xs"></i>
                             </label>
@@ -473,32 +486,11 @@
                     </div>
                 </div>
 
-                <!-- زر تثبيت التطبيق داخل الإعدادات -->
-                <button type="button" id="settingsInstallBtn" onclick="closeSettingsModal(); triggerInstallApp();" class="w-full min-h-[46px] bg-slate-900 dark:bg-slate-700 text-emerald-400 font-bold py-2.5 px-4 rounded-2xl flex items-center justify-center gap-2 border border-emerald-500/30">
-                    <i class="fa-solid fa-mobile-screen-button"></i>
-                    <span>تثبيت التطبيق على الشاشة الرئيسية للهاتف</span>
-                </button>
-
                 <div class="pt-1 flex gap-2">
                     <button type="submit" class="flex-1 min-h-[48px] bg-emerald-600 text-white font-bold py-3 rounded-2xl transition shadow-md" data-i18n="btnSaveSettings">حفظ التغييرات</button>
                     <button type="button" onclick="logoutUser()" class="min-h-[48px] bg-rose-50 dark:bg-rose-950/60 text-rose-600 font-bold px-4 py-3 rounded-2xl transition" data-i18n="btnLogout">خروج</button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <!-- MODAL: MANUAL INSTALL GUIDE (لأجهزة آيفون أو عند تأخر المتصفح) -->
-    <div id="installGuideModal" onclick="if(event.target===this) closeInstallGuideModal()" class="fixed inset-0 bg-slate-900/70 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 pb-8">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
-                <h3 class="font-black text-base text-slate-900 dark:text-white flex items-center gap-2">
-                    <i class="fa-solid fa-mobile-screen text-emerald-600"></i>
-                    <span>تثبيت تطبيق دُگّان على الهاتف</span>
-                </h3>
-                <button type="button" onclick="closeInstallGuideModal()" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div id="installGuideContent" class="text-sm text-slate-700 dark:text-slate-200 space-y-3 leading-relaxed"></div>
-            <button type="button" onclick="closeInstallGuideModal()" class="w-full min-h-[46px] bg-emerald-600 text-white font-bold rounded-2xl">فهمت</button>
         </div>
     </div>
 
@@ -523,7 +515,79 @@
         const DEMO_SESSION_KEY = 'restaurant_procurement_demo_mode';
         const SYNC_QUEUE_KEY = 'daggan_sync_queue_v5';
 
-        const DEFAULT_AVATAR_SVG = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="%2316a34a"/><text x="50" y="65" font-size="45" text-anchor="middle" fill="white">👤</text></svg>';
+        // توليد أيقونة التطبيق برمجياً بصيغة PNG حقيقية (512x512) بدون الحاجة لأي ملف صورة خارجي
+        function generateAppIconDataUrl(size = 512) {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                const r = size * 0.22;
+
+                // خلفية دائرية الحواف باللون الأخضر الزمردي
+                ctx.fillStyle = '#16a34a';
+                ctx.beginPath();
+                ctx.moveTo(r, 0);
+                ctx.lineTo(size - r, 0);
+                ctx.quadraticCurveTo(size, 0, size, r);
+                ctx.lineTo(size, size - r);
+                ctx.quadraticCurveTo(size, size, size - r, size);
+                ctx.lineTo(r, size);
+                ctx.quadraticCurveTo(0, size, 0, size - r);
+                ctx.lineTo(0, r);
+                ctx.quadraticCurveTo(0, 0, r, 0);
+                ctx.closePath();
+                ctx.fill();
+
+                // رسم أيقونة سلة التسوق باللون الأبيض
+                ctx.strokeStyle = '#ffffff';
+                ctx.fillStyle = '#ffffff';
+                ctx.lineWidth = size * 0.055;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                // مقبض السلة
+                ctx.beginPath();
+                ctx.arc(size * 0.5, size * 0.38, size * 0.14, Math.PI, 0);
+                ctx.stroke();
+
+                // جسم السلة
+                ctx.beginPath();
+                ctx.moveTo(size * 0.28, size * 0.38);
+                ctx.lineTo(size * 0.72, size * 0.38);
+                ctx.lineTo(size * 0.67, size * 0.68);
+                ctx.lineTo(size * 0.33, size * 0.68);
+                ctx.closePath();
+                ctx.fill();
+
+                // نص دُگّان أسفل السلة
+                ctx.font = `900 ${Math.round(size * 0.15)}px Cairo, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('دُگّان', size * 0.5, size * 0.83);
+
+                return canvas.toDataURL('image/png');
+            } catch (e) {
+                return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="%2316a34a"/><text x="50" y="62" font-size="38" font-weight="bold" text-anchor="middle" fill="white">دُگّان</text></svg>';
+            }
+        }
+
+        const GENERATED_APP_ICON = generateAppIconDataUrl(512);
+        const GENERATED_APP_ICON_192 = generateAppIconDataUrl(192);
+
+        // حقن الأيقونة المولّدة في Apple Touch Icon و Favicon
+        (function injectDynamicIcons() {
+            const appleLink = document.createElement('link');
+            appleLink.rel = 'apple-touch-icon';
+            appleLink.href = GENERATED_APP_ICON_192;
+            document.head.appendChild(appleLink);
+
+            const favLink = document.createElement('link');
+            favLink.rel = 'icon';
+            favLink.type = 'image/png';
+            favLink.href = GENERATED_APP_ICON_192;
+            document.head.appendChild(favLink);
+        })();
 
         let currentUser = null;
         let isCloudMode = false;
@@ -697,6 +761,14 @@
         function setSyncBar(show) {
             const bar = document.getElementById('syncBar');
             if (bar) bar.classList.toggle('hidden', !show);
+        }
+
+        function openFutureAdsModal() {
+            document.getElementById('futureAdsModal').classList.remove('hidden');
+        }
+
+        function closeFutureAdsModal() {
+            document.getElementById('futureAdsModal').classList.add('hidden');
         }
 
         // --- إشعارات داخل المنصة فقط ---
@@ -1017,10 +1089,10 @@
                 badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span>متصل</span>`;
             }
 
-            const avatarSrc = appData.avatarUrl || DEFAULT_AVATAR_SVG;
+            const avatarSrc = appData.avatarUrl || GENERATED_APP_ICON_192;
             container.innerHTML = `
                 <button type="button" onclick="openSettingsModal()" class="h-11 flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 active:scale-95 border border-emerald-200 dark:border-emerald-800 px-2 rounded-xl transition">
-                    <img src="${escapeHtml(avatarSrc)}" onerror="this.onerror=null;this.src=DEFAULT_AVATAR_SVG" class="w-7 h-7 rounded-full object-cover border border-emerald-400 shrink-0">
+                    <img src="${escapeHtml(avatarSrc)}" onerror="this.onerror=null;this.src=GENERATED_APP_ICON_192" class="w-7 h-7 rounded-full object-cover border border-emerald-400 shrink-0">
                     <span class="text-xs font-bold text-emerald-900 dark:text-emerald-200 truncate max-w-[65px] sm:max-w-[100px]">${escapeHtml(appData.userName)}</span>
                 </button>`;
         }
@@ -1608,7 +1680,7 @@
             document.getElementById('settingUserName').value = appData.userName || "";
             document.getElementById('settingThemeMode').value = appData.theme || 'light';
             document.getElementById('settingLanguage').value = appData.lang || 'ar';
-            document.getElementById('settingsAvatarPreview').src = appData.avatarUrl || DEFAULT_AVATAR_SVG;
+            document.getElementById('settingsAvatarPreview').src = appData.avatarUrl || GENERATED_APP_ICON_192;
         }
 
         function openSettingsModal() {
@@ -1720,7 +1792,7 @@
             return String(str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
 
-        // --- PWA Service Worker & التثبيت الفوري على الهواتف ---
+        // --- PWA Service Worker & التثبيت الفوري بضغطة واحدة ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js').catch(() => {});
@@ -1737,20 +1809,10 @@
         }
 
         function initPwaInstallPrompt() {
-            const headerBtn = document.getElementById('headerInstallBtn');
-            const settingsBtn = document.getElementById('settingsInstallBtn');
-
-            if (isRunningStandalone()) {
-                if (headerBtn) headerBtn.classList.add('hidden');
-                if (settingsBtn) settingsBtn.classList.add('hidden');
-                return;
+            if (isRunningStandalone()) return;
+            if (window.__deferredInstallPrompt) {
+                showInstallPromptBanner();
             }
-
-            setTimeout(() => {
-                if (!isRunningStandalone()) {
-                    showInstallPromptBanner();
-                }
-            }, 800);
         }
 
         window.onInstallPromptReady = function() {
@@ -1763,69 +1825,23 @@
             window.__deferredInstallPrompt = null;
             const banner = document.getElementById('pwa-install-banner');
             if (banner) banner.remove();
-            const headerBtn = document.getElementById('headerInstallBtn');
-            const settingsBtn = document.getElementById('settingsInstallBtn');
-            if (headerBtn) headerBtn.classList.add('hidden');
-            if (settingsBtn) settingsBtn.classList.add('hidden');
             sendAppNotification("تطبيق دُگّان", "تم تثبيت التطبيق بنجاح على شاشة هاتفك!", 'success');
         });
 
-        async function triggerInstallApp() {
+        async function triggerDirectInstall() {
             const promptEvent = window.__deferredInstallPrompt;
-            if (promptEvent) {
-                promptEvent.prompt();
-                const { outcome } = await promptEvent.userChoice;
-                if (outcome === 'accepted') {
-                    const banner = document.getElementById('pwa-install-banner');
-                    if (banner) banner.remove();
-                }
-                window.__deferredInstallPrompt = null;
-                return;
+            if (!promptEvent) return;
+            promptEvent.prompt();
+            const { outcome } = await promptEvent.userChoice;
+            if (outcome === 'accepted') {
+                const banner = document.getElementById('pwa-install-banner');
+                if (banner) banner.remove();
             }
-            openInstallGuideModal();
-        }
-
-        function openInstallGuideModal() {
-            const modal = document.getElementById('installGuideModal');
-            const content = document.getElementById('installGuideContent');
-            const ua = navigator.userAgent;
-            const isIOS = /iPhone|iPad|iPod/i.test(ua);
-            const isSamsung = /SamsungBrowser/i.test(ua);
-
-            if (isIOS) {
-                content.innerHTML = `
-                    <p class="font-bold text-emerald-600">التثبيت على أجهزة آيفون (Safari):</p>
-                    <ol class="list-decimal pr-5 space-y-2">
-                        <li>اضغط على أيقونة <b>المشاركة (Share)</b> <i class="fa-solid fa-arrow-up-from-bracket text-emerald-600"></i> أسفل الشاشة.</li>
-                        <li>اسحب القائمة للأسفل واختر <b>"إضافة إلى الشاشة الرئيسية" (Add to Home Screen)</b>.</li>
-                        <li>اضغط على <b>"إضافة" (Add)</b> أعلى الشاشة وسيظهر كتطبيق مستقل.</li>
-                    </ol>`;
-            } else if (isSamsung) {
-                content.innerHTML = `
-                    <p class="font-bold text-emerald-600">التثبيت في متصفح سامسونج (Samsung Internet):</p>
-                    <ol class="list-decimal pr-5 space-y-2">
-                        <li>اضغط على أيقونة <b>القائمة (☰)</b> أسفل يسار الشاشة أو أيقونة <b>التنزيل</b> في شريط العنوان.</li>
-                        <li>اختر <b>"إضافة الصفحة إلى" (Add page to)</b>.</li>
-                        <li>اختر <b>"الشاشة الرئيسية" (Home screen)</b> ثم اضغط <b>إضافة</b>.</li>
-                    </ol>`;
-            } else {
-                content.innerHTML = `
-                    <p class="font-bold text-emerald-600">التثبيت في متصفح كروم (Chrome - أندرويد):</p>
-                    <ol class="list-decimal pr-5 space-y-2">
-                        <li>اضغط على النقاط الثلاث <b>(⋮)</b> أعلى يسار المتصفح.</li>
-                        <li>اختر <b>"تثبيت التطبيق" (Install app)</b> أو <b>"الإضافة إلى الشاشة الرئيسية"</b>.</li>
-                        <li>اضغط <b>تثبيت (Install)</b> وسيظهر التطبيق بأيقونته الكاملة على هاتفك.</li>
-                    </ol>`;
-            }
-            modal.classList.remove('hidden');
-        }
-
-        function closeInstallGuideModal() {
-            document.getElementById('installGuideModal').classList.add('hidden');
+            window.__deferredInstallPrompt = null;
         }
 
         function showInstallPromptBanner() {
-            if (document.getElementById('pwa-install-banner') || isRunningStandalone()) return;
+            if (document.getElementById('pwa-install-banner') || isRunningStandalone() || !window.__deferredInstallPrompt) return;
 
             const banner = document.createElement('div');
             banner.id = 'pwa-install-banner';
@@ -1835,14 +1851,14 @@
                 <div style="background: #0f172a; color: #fff; padding: 13px; border-radius: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.45); border: 1px solid rgba(16,185,129,0.4);">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
                         <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                            <img src="./icon-192.png" onerror="this.onerror=null;this.src=DEFAULT_AVATAR_SVG" style="width: 42px; height: 42px; border-radius: 12px; object-fit: cover; flex-shrink: 0;">
+                            <img src="${GENERATED_APP_ICON_192}" style="width: 42px; height: 42px; border-radius: 12px; object-fit: cover; flex-shrink: 0;">
                             <div style="min-width: 0;">
                                 <div style="font-weight: 800; font-size: 13px;">تثبيت تطبيق دُگّان على هاتفك</div>
                                 <div style="font-size: 11px; color: #94a3b8;">يعمل بملء الشاشة كتطبيق مستقل</div>
                             </div>
                         </div>
                         <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                            <button type="button" onclick="triggerInstallApp()" style="background: #16a34a; color: #fff; border: none; padding: 9px 13px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 13px;">تثبيت</button>
+                            <button type="button" onclick="triggerDirectInstall()" style="background: #16a34a; color: #fff; border: none; padding: 9px 14px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 13px;">تثبيت</button>
                             <button type="button" onclick="document.getElementById('pwa-install-banner')?.remove()" style="background: rgba(255,255,255,0.12); color: #cbd5e1; border: none; padding: 9px 11px; border-radius: 12px; cursor: pointer; font-size: 13px;">✕</button>
                         </div>
                     </div>

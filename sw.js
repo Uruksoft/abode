@@ -1,12 +1,10 @@
-const CACHE_NAME = 'daggan-app-v9';
+const CACHE_NAME = 'daggan-app-v10';
 const assetsToCache = [
   './',
   './index.html',
   './login.html',
   './supabase-config.js',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+  './manifest.json'
 ];
 
 const CACHEABLE_EXTERNAL_HOSTS = [
