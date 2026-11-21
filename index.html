@@ -4,93 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>دُگّان - إدارة المشتريات والمصروفات</title>
-    <!-- إعدادات PWA وملائمة الشاشة -->
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#16a34a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="دُگّان">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2316a34a'/%3E%3Ctext x='50' y='62' font-size='34' font-weight='bold' font-family='sans-serif' text-anchor='middle' fill='white'%3Eدُگّان%3C/text%3E%3C/svg%3E">
 
-    <!-- تطبيق المظهر الليلي والتقاط حدث التثبيت المباشر -->
     <script>
-        if (localStorage.getItem('daggan_theme') === 'dark') {
-            document.documentElement.classList.add('dark');
-        }
+        if (localStorage.getItem('daggan_theme') === 'dark') document.documentElement.classList.add('dark');
         window.__deferredInstallPrompt = null;
-        window.addEventListener('beforeinstallprompt', function(e) {
+        window.addEventListener('beforeinstallprompt', e => {
             e.preventDefault();
             window.__deferredInstallPrompt = e;
-            if (typeof window.onInstallPromptReady === 'function') {
-                window.onInstallPromptReady();
-            }
+            if (typeof window.showInstallPromptBanner === 'function') window.showInstallPromptBanner();
         });
     </script>
 
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: { cairo: ['Cairo', 'sans-serif'] }
-                }
-            }
-        }
+            theme: { extend: { fontFamily: { cairo: ['Cairo', 'sans-serif'] } } }
+        };
     </script>
-    <!-- FontAwesome & Cairo Font -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <!-- Supabase JS SDK v2 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-config.js"></script>
 
     <style>
-        * {
-            -webkit-tap-highlight-color: transparent;
-            box-sizing: border-box;
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        html, body { width: 100%; max-width: 100%; overflow-x: hidden; font-family: 'Cairo', sans-serif; touch-action: pan-y; }
+        button, a, input, select, label { touch-action: manipulation; cursor: pointer; }
+        input, select, button { font-size: 16px !important; }
+        input[type="date"] { -webkit-appearance: none; appearance: none; min-width: 0; max-width: 100%; }
+        header.app-header { padding-top: max(10px, env(safe-area-inset-top, 10px)); }
+        nav.app-bottom-nav { padding-bottom: max(10px, env(safe-area-inset-bottom, 10px)); }
+        @keyframes pointDown {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(7px); }
         }
-        html, body {
-            width: 100%;
-            max-width: 100%;
-            overflow-x: hidden;
-            font-family: 'Cairo', sans-serif;
-            touch-action: pan-y;
-        }
-        button, a, input, select, label {
-            touch-action: manipulation;
-            cursor: pointer;
-        }
-        input, select, button {
-            font-size: 16px !important;
-        }
-        input[type="date"] {
-            -webkit-appearance: none;
-            appearance: none;
-            min-width: 0;
-            max-width: 100%;
-        }
-        header.app-header {
-            padding-top: max(10px, env(safe-area-inset-top, 10px));
-            pointer-events: auto;
-        }
-        nav.app-bottom-nav {
-            padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
-            pointer-events: auto;
-        }
-        @media print {
-            .no-print { display: none !important; }
-            body { background: white !important; color: black !important; }
-        }
+        .animate-point-down { animation: pointDown 1s ease-in-out infinite; }
+        @media print { .no-print { display: none !important; } body { background: white !important; color: black !important; } }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-[100dvh] flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
 
-    <!-- شريط مزامنة علوي خفيف لا يحجب اللمس -->
-    <div id="syncBar" class="fixed top-0 left-0 right-0 h-1 bg-emerald-500 z-50 hidden animate-pulse pointer-events-none"></div>
-
-    <!-- Header Navigation -->
+    <!-- Header -->
     <header class="app-header bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40 shadow-xs no-print">
         <div class="max-w-3xl mx-auto px-3 pb-2.5 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
@@ -105,13 +67,11 @@
                             <span>متصل</span>
                         </span>
                     </div>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate" data-i18n="headerSubtitle">إدارة المواد والمصروفات والتحاسب</p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">إدارة المواد والمصروفات والقاصة</p>
                 </div>
             </div>
-            
             <div class="flex items-center gap-1.5 shrink-0">
-                <!-- أيقونة الإعلانات المستقبلية -->
-                <button type="button" onclick="openFutureAdsModal()" class="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 active:scale-95 text-amber-600 dark:text-amber-400 flex items-center justify-center transition shrink-0" title="مساحة إعلانية">
+                <button type="button" onclick="toggleModal('futureAdsModal', true)" class="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 active:scale-95 text-amber-600 dark:text-amber-400 flex items-center justify-center transition shrink-0" title="مساحة إعلانية">
                     <i class="fa-solid fa-bullhorn text-base"></i>
                 </button>
                 <div id="userAccountArea"></div>
@@ -123,65 +83,58 @@
     </header>
 
     <!-- Main Container -->
-    <main id="mainContainer" class="flex-1 max-w-3xl w-full mx-auto px-3.5 pt-4 pb-32">
+    <main class="flex-1 max-w-3xl w-full mx-auto px-3.5 pt-4 pb-32">
 
         <!-- TAB 1: SHOPPING LIST -->
         <div id="tabContent-shopping" class="space-y-4">
-            <!-- Summary Card -->
             <div class="bg-slate-900 text-white p-5 rounded-3xl shadow-lg">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs bg-white/10 px-3 py-1 rounded-full text-emerald-300 font-bold" data-i18n="cartSummaryTitle">إجمالي قائمة الشراء الحالية</span>
-                    <span class="text-xs font-bold text-slate-300"><span id="activeCartCount">0</span> <span data-i18n="itemsUnit">مواد</span></span>
+                    <span class="text-xs bg-white/10 px-3 py-1 rounded-full text-emerald-300 font-bold">إجمالي قائمة الشراء الحالية</span>
+                    <span class="text-xs font-bold text-slate-300"><span id="activeCartCount">0</span> مواد</span>
                 </div>
                 <div class="text-3xl font-black mb-4 tracking-tight text-emerald-400" id="activeCartTotal">0 د.ع</div>
                 <button type="button" onclick="checkoutCart()" class="w-full min-h-[48px] bg-emerald-600 active:bg-emerald-700 text-white font-bold px-4 py-3 rounded-2xl shadow-md transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-cash-register"></i>
-                    <span data-i18n="checkoutBtn">إتمام التحاسب وترحيل القائمة</span>
+                    <span>إتمام التحاسب وترحيل القائمة</span>
                 </button>
             </div>
 
-            <!-- Add Item to Cart Form -->
             <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 space-y-3">
                 <div class="flex items-center justify-between">
                     <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                         <i class="fa-solid fa-circle-plus text-emerald-600"></i>
-                        <span data-i18n="addToCartTitle">إضافة مادة لقائمة الشراء</span>
+                        <span>إضافة مادة لقائمة الشراء</span>
                     </h3>
-                    <button type="button" onclick="openMaterialModal()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-2 rounded-xl">
-                        + <span data-i18n="quickNewMat">مادة جديدة</span>
-                    </button>
+                    <button type="button" onclick="openMaterialModal()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-2 rounded-xl">+ مادة جديدة</button>
                 </div>
                 <form onsubmit="addItemToCart(event)" class="grid grid-cols-2 gap-3">
                     <div class="col-span-2 min-w-0">
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="labelMaterial">المادة *</label>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">المادة *</label>
                         <select id="cartMaterialSelect" required onchange="onMaterialSelected()" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5 focus:outline-none focus:border-emerald-500">
                             <option value="">-- اختر المادة --</option>
                         </select>
                     </div>
                     <div class="min-w-0">
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="labelQty">الكمية *</label>
-                        <input type="number" step="any" inputmode="decimal" id="cartQty" required min="0.01" placeholder="1" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5 focus:outline-none focus:border-emerald-500">
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">الكمية *</label>
+                        <input type="number" step="any" inputmode="decimal" id="cartQty" required min="0" value="0" onfocus="if(this.value==='0')this.value=''" onblur="if(this.value==='')this.value='0'" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5 focus:outline-none focus:border-emerald-500">
                     </div>
                     <div class="min-w-0">
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="labelPrice">السعر *</label>
-                        <input type="number" step="any" inputmode="decimal" id="cartPrice" required min="0" placeholder="0" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5 focus:outline-none focus:border-emerald-500">
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">السعر *</label>
+                        <input type="number" step="any" inputmode="decimal" id="cartPrice" required min="0" value="0" onfocus="if(this.value==='0')this.value=''" onblur="if(this.value==='')this.value='0'" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5 focus:outline-none focus:border-emerald-500">
                     </div>
                     <div class="col-span-2">
                         <button type="submit" class="w-full min-h-[48px] bg-emerald-600 active:scale-[0.99] text-white font-bold py-3 rounded-2xl transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-plus"></i>
-                            <span data-i18n="btnAdd">إضافة للقائمة</span>
+                            <i class="fa-solid fa-plus"></i><span>إضافة للقائمة</span>
                         </button>
                     </div>
                 </form>
             </div>
 
-            <!-- Active Cart Items -->
             <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 overflow-hidden">
                 <div class="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                    <h3 class="font-bold text-sm text-slate-900 dark:text-white" data-i18n="currentCartTitle">مواد قائمة الشراء الحالية</h3>
+                    <h3 class="font-bold text-sm text-slate-900 dark:text-white">مواد قائمة الشراء الحالية</h3>
                     <button type="button" onclick="clearCart()" class="text-rose-600 text-xs font-bold px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/50 flex items-center gap-1">
-                        <i class="fa-solid fa-trash-can"></i>
-                        <span data-i18n="btnClearCart">تفريغ</span>
+                        <i class="fa-solid fa-trash-can"></i><span>تفريغ</span>
                     </button>
                 </div>
                 <div id="cartItemsList" class="divide-y divide-slate-100 dark:divide-slate-700"></div>
@@ -193,37 +146,35 @@
             <div class="bg-slate-900 text-white p-5 rounded-3xl shadow-lg">
                 <div class="grid grid-cols-2 gap-3">
                     <div class="min-w-0">
-                        <span class="text-slate-400 text-[11px] block mb-1"><span data-i18n="todayExpensesLabel">مصروفات اليوم</span> (<span id="todayDateDisplay"></span>)</span>
+                        <span class="text-slate-400 text-[11px] block mb-1">مصروفات اليوم (<span id="todayDateDisplay"></span>)</span>
                         <div class="text-xl sm:text-2xl font-black text-amber-400 truncate" id="todayExpensesTotal">0 د.ع</div>
                     </div>
                     <div class="border-r border-white/10 pr-3 min-w-0">
-                        <span class="text-slate-400 text-[11px] block mb-1" data-i18n="allExpensesLabel">إجمالي المصروفات الكلي</span>
+                        <span class="text-slate-400 text-[11px] block mb-1">إجمالي المصروفات الكلي</span>
                         <div class="text-lg sm:text-xl font-bold text-white truncate" id="allExpensesTotal">0 د.ع</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Add Expense Form -->
             <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 space-y-3 no-print">
                 <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                    <i class="fa-solid fa-circle-plus text-amber-500"></i>
-                    <span data-i18n="addExpenseTitle">تسجيل مصروف يومي جديد</span>
+                    <i class="fa-solid fa-circle-plus text-amber-500"></i><span>تسجيل مصروف يومي جديد</span>
                 </h3>
                 <form onsubmit="addExpense(event)" class="grid grid-cols-2 gap-3">
                     <div class="col-span-2 min-w-0">
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="expTitleLabel">بيان المصروف *</label>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">بيان المصروف *</label>
                         <input type="text" id="expTitle" required placeholder="مثلاً: أجور تكسي، غاز..." class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5">
                     </div>
                     <div class="min-w-0">
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="expAmountLabel">المبلغ (د.ع) *</label>
-                        <input type="number" step="any" inputmode="decimal" id="expAmount" required min="1" placeholder="0" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5">
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">المبلغ (د.ع) *</label>
+                        <input type="number" step="any" inputmode="decimal" id="expAmount" required min="0" value="0" onfocus="if(this.value==='0')this.value=''" onblur="if(this.value==='')this.value='0'" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5">
                     </div>
                     <div class="min-w-0">
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="labelDate">التاريخ *</label>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">التاريخ *</label>
                         <input type="date" id="expDate" required class="w-full min-w-0 min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-2.5 py-2.5">
                     </div>
                     <div class="col-span-2 min-w-0">
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="expCatLabel">التصنيف *</label>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">التصنيف *</label>
                         <select id="expCategory" required class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5">
                             <option value="نقل وتوصيل">نقل وتوصيل</option>
                             <option value="رواتب وأجور">رواتب وأجور</option>
@@ -238,71 +189,92 @@
                     </div>
                     <div class="col-span-2">
                         <button type="submit" class="w-full min-h-[48px] bg-emerald-600 active:scale-[0.99] text-white font-bold py-3 rounded-2xl transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-plus"></i>
-                            <span data-i18n="btnSaveExpense">حفظ المصروف</span>
+                            <i class="fa-solid fa-plus"></i><span>حفظ المصروف</span>
                         </button>
                     </div>
                 </form>
             </div>
 
-            <!-- تقرير المصروفات من تاريخ إلى تاريخ -->
-            <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 space-y-3 overflow-hidden">
-                <div class="flex items-center justify-between gap-2">
-                    <h3 class="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                        <i class="fa-solid fa-filter text-amber-500"></i>
-                        <span data-i18n="expFilterTitle">تقرير المصروفات (من - إلى)</span>
-                    </h3>
-                    <div class="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-2.5 py-1 rounded-xl text-xs font-black text-amber-800 dark:text-amber-300 shrink-0">
-                        <span id="filteredExpensesSum">0 د.ع</span>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-2.5 no-print">
-                    <div class="min-w-0">
-                        <label class="block text-[11px] font-bold text-slate-500 mb-1" data-i18n="fromDate">من تاريخ</label>
-                        <input type="date" id="expFilterStart" onchange="renderExpensesList()" class="w-full min-w-0 min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2">
-                    </div>
-                    <div class="min-w-0">
-                        <label class="block text-[11px] font-bold text-slate-500 mb-1" data-i18n="toDate">إلى تاريخ</label>
-                        <input type="date" id="expFilterEnd" onchange="renderExpensesList()" class="w-full min-w-0 min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2">
-                    </div>
-                    <div class="min-w-0">
-                        <select id="expFilterCat" onchange="renderExpensesList()" class="w-full min-w-0 min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2">
-                            <option value="all">كل التصنيفات</option>
-                            <option value="نقل وتوصيل">نقل وتوصيل</option>
-                            <option value="رواتب وأجور">رواتب وأجور</option>
-                            <option value="فواتير وخدمات">فواتير وخدمات</option>
-                            <option value="صيانة ومعدات">صيانة ومعدات</option>
-                            <option value="إيجار">إيجار</option>
-                            <option value="نثريات وأخرى">نثريات وأخرى</option>
-                        </select>
-                    </div>
-                    <div class="flex gap-2 min-w-0">
-                        <button type="button" onclick="resetExpenseFilter()" class="flex-1 min-w-0 min-h-[44px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs truncate px-1" data-i18n="btnReset">إعادة ضبط</button>
-                        <button type="button" onclick="window.print()" class="w-11 shrink-0 min-h-[44px] bg-amber-500 text-white font-bold rounded-xl flex items-center justify-center"><i class="fa-solid fa-print"></i></button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Expenses List -->
             <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 overflow-hidden">
                 <div class="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                    <h3 class="font-bold text-sm text-slate-900 dark:text-white" data-i18n="expensesRecordTitle">سجل المصروفات اليومية</h3>
-                    <span class="text-xs font-bold text-slate-500" id="filteredExpensesCount">0</span>
+                    <h3 class="font-bold text-sm text-slate-900 dark:text-white">آخر المصروفات المسجلة</h3>
+                    <span class="text-xs font-bold text-slate-500" id="expensesCountLabel">0</span>
                 </div>
                 <div id="expensesListContainer" class="divide-y divide-slate-100 dark:divide-slate-700"></div>
             </div>
         </div>
 
-        <!-- TAB 3: MATERIALS -->
+        <!-- TAB 3: DAILY CASHBOX (القاصة اليومية) -->
+        <div id="tabContent-cashbox" class="space-y-4 hidden">
+            <div class="bg-slate-900 text-white p-5 rounded-3xl shadow-lg space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs bg-white/10 px-3 py-1 rounded-full text-emerald-300 font-bold">صافي القاصة (<span id="cbSelectedDateLabel"></span>)</span>
+                    <span class="text-[11px] text-slate-400">المبيعات − الصرفيات</span>
+                </div>
+                <div class="text-3xl font-black tracking-tight text-emerald-400" id="cbNetPreview">0 د.ع</div>
+                <div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/10 text-center">
+                    <div class="bg-white/5 p-2.5 rounded-2xl min-w-0">
+                        <span class="text-[10px] text-slate-400 block">المبيعات</span>
+                        <span class="font-black text-xs text-sky-400 block truncate" id="cbSalesPreview">0 د.ع</span>
+                    </div>
+                    <div class="bg-white/5 p-2.5 rounded-2xl min-w-0">
+                        <span class="text-[10px] text-slate-400 block">المشتريات</span>
+                        <span class="font-black text-xs text-emerald-300 block truncate" id="cbPurchasesPreview">0 د.ع</span>
+                    </div>
+                    <div class="bg-white/5 p-2.5 rounded-2xl min-w-0">
+                        <span class="text-[10px] text-slate-400 block">المصروفات</span>
+                        <span class="font-black text-xs text-amber-400 block truncate" id="cbExpensesPreview">0 د.ع</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 space-y-3 no-print">
+                <div class="flex items-center justify-between gap-2">
+                    <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-vault text-emerald-600"></i>
+                        <span>تسجيل مبيعات وإغلاق القاصة اليومية</span>
+                    </h3>
+                    <span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0">قيد التطوير</span>
+                </div>
+                <form onsubmit="saveCashboxEntry(event)" class="grid grid-cols-2 gap-3">
+                    <div class="min-w-0">
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">إجمالي المبيعات (د.ع) *</label>
+                        <input type="number" step="any" inputmode="decimal" id="cbSalesInput" required min="0" value="0" oninput="updateCashboxPreview()" onfocus="if(this.value==='0')this.value=''" onblur="if(this.value==='')this.value='0';updateCashboxPreview()" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div class="min-w-0">
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">التاريخ *</label>
+                        <input type="date" id="cbDateInput" required onchange="onCashboxDateChange()" class="w-full min-w-0 min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-2.5 py-2.5">
+                    </div>
+                    <div class="col-span-2 min-w-0">
+                        <input type="text" id="cbNotesInput" placeholder="ملاحظة (مثلاً: شفت صباحي ومسائي)..." class="w-full min-h-[46px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2">
+                    </div>
+                    <div class="col-span-2">
+                        <button type="submit" class="w-full min-h-[48px] bg-emerald-600 active:scale-[0.99] text-white font-bold py-3 rounded-2xl transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-check-circle"></i>
+                            <span>حفظ وترحيل القاصة اليومية</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between gap-2">
+                    <h3 class="font-bold text-sm text-slate-900 dark:text-white">سجل القاصات السابقة</h3>
+                    <span class="text-xs font-black text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-xl">الصافي الكلي: <span id="cbAllNetTotal">0 د.ع</span></span>
+                </div>
+                <div id="cashboxHistoryList" class="divide-y divide-slate-100 dark:divide-slate-700"></div>
+            </div>
+        </div>
+
+        <!-- TAB 4: MATERIALS -->
         <div id="tabContent-materials" class="space-y-4 hidden">
             <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0">
-                    <h2 class="font-black text-lg text-slate-900 dark:text-white truncate" data-i18n="materialsTitle">إدارة المواد الأساسية</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 truncate" data-i18n="materialsSub">تعريف المواد ووحداتها الثابتة</p>
+                    <h2 class="font-black text-lg text-slate-900 dark:text-white truncate">إدارة المواد الأساسية</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 truncate">تعريف المواد ووحداتها الثابتة</p>
                 </div>
                 <button type="button" onclick="openMaterialModal()" class="min-h-[46px] bg-emerald-600 active:scale-95 text-white font-bold px-4 py-2.5 rounded-2xl shadow-md transition flex items-center gap-2 text-sm shrink-0">
-                    <i class="fa-solid fa-plus"></i>
-                    <span data-i18n="btnNewMaterial">إضافة مادة</span>
+                    <i class="fa-solid fa-plus"></i><span>إضافة مادة</span>
                 </button>
             </div>
             <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 overflow-hidden">
@@ -310,81 +282,149 @@
             </div>
         </div>
 
-        <!-- TAB 4: REPORTS & ARCHIVE -->
+        <!-- TAB 5: UNIFIED REPORTS & ARCHIVE (التقارير العامة الشاملة) -->
         <div id="tabContent-reports" class="space-y-4 hidden">
             <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 space-y-3 overflow-hidden no-print">
-                <h2 class="font-black text-lg text-slate-900 dark:text-white" data-i18n="reportsTitle">السجل والتقارير المفصلة</h2>
+                <div class="flex items-center justify-between gap-2">
+                    <div>
+                        <h2 class="font-black text-base sm:text-lg text-slate-900 dark:text-white">التقارير العامة الشاملة</h2>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">حركة المبيعات والقاصة والمشتريات والمصروفات حسب الأيام</p>
+                    </div>
+                    <div class="flex gap-1.5 shrink-0">
+                        <button type="button" onclick="setReportToday()" class="text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1.5 rounded-xl">اليوم</button>
+                        <button type="button" onclick="resetReportFilter()" class="text-[11px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-2.5 py-1.5 rounded-xl">الكل</button>
+                    </div>
+                </div>
                 <div class="grid grid-cols-2 gap-2.5">
                     <div class="min-w-0">
-                        <label class="block text-[11px] font-bold text-slate-500 mb-1" data-i18n="fromDate">من تاريخ</label>
-                        <input type="date" id="reportStartDate" class="w-full min-w-0 min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2">
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1">من تاريخ</label>
+                        <input type="date" id="reportStartDate" onchange="generateReport()" class="w-full min-w-0 min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2">
                     </div>
                     <div class="min-w-0">
-                        <label class="block text-[11px] font-bold text-slate-500 mb-1" data-i18n="toDate">إلى تاريخ</label>
-                        <input type="date" id="reportEndDate" class="w-full min-w-0 min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2">
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1">إلى تاريخ</label>
+                        <input type="date" id="reportEndDate" onchange="generateReport()" class="w-full min-w-0 min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2">
                     </div>
                     <div class="col-span-2 min-w-0">
-                        <select id="reportTypeFilter" class="w-full min-w-0 min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2">
-                            <option value="all">شامل (قوائم المشتريات + المصروفات)</option>
+                        <select id="reportTypeFilter" onchange="generateReport()" class="w-full min-w-0 min-h-[44px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2">
+                            <option value="all">شامل كل الأقسام (القاصة + المشتريات + المصروفات)</option>
+                            <option value="cashbox">القاصة والمبيعات فقط</option>
                             <option value="purchases">قوائم المشتريات فقط</option>
                             <option value="expenses">المصروفات اليومية فقط</option>
                         </select>
                     </div>
                     <div class="col-span-2 flex gap-2">
-                        <button type="button" onclick="generateReport()" class="flex-1 min-h-[46px] bg-emerald-600 active:scale-[0.99] text-white font-bold py-2.5 rounded-xl transition shadow-sm" data-i18n="btnShowReport">
-                            عرض التقرير
+                        <button type="button" onclick="generateReport()" class="flex-1 min-h-[46px] bg-emerald-600 active:scale-[0.99] text-white font-bold py-2.5 rounded-xl transition shadow-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass-chart"></i><span>تحديث التقرير</span>
                         </button>
-                        <button type="button" onclick="window.print()" class="w-12 shrink-0 min-h-[46px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl flex items-center justify-center">
-                            <i class="fa-solid fa-print"></i>
-                        </button>
+                        <button type="button" onclick="window.print()" class="w-12 shrink-0 min-h-[46px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl flex items-center justify-center" title="طباعة"><i class="fa-solid fa-print"></i></button>
                     </div>
                 </div>
             </div>
 
-            <div id="reportResultContainer" class="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-xs border border-slate-100 dark:border-slate-700 hidden space-y-4">
-                <div class="grid grid-cols-3 gap-2 border-b border-slate-100 dark:border-slate-700 pb-3 text-center">
-                    <div class="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 min-w-0">
-                        <span class="text-[10px] text-emerald-700 dark:text-emerald-300 block" data-i18n="totalPurchasesLabel">المشتريات</span>
-                        <span class="font-black text-emerald-900 dark:text-emerald-100 text-xs block truncate" id="repPurchasesTotal">0</span>
+            <!-- Summary Totals Box -->
+            <div class="bg-slate-900 text-white p-4 rounded-3xl shadow-lg space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-300">ملخص الفترة المحددة</span>
+                    <span class="text-[11px] bg-white/10 px-2.5 py-0.5 rounded-full text-emerald-300 font-bold" id="reportDaysCountBadge">0 أيام</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div class="bg-white/5 p-3 rounded-2xl min-w-0">
+                        <span class="text-[10px] text-slate-400 block">إجمالي المبيعات (القاصة)</span>
+                        <span class="font-black text-sm text-sky-400 block truncate" id="repSalesTotal">0 د.ع</span>
                     </div>
-                    <div class="p-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/50 min-w-0">
-                        <span class="text-[10px] text-amber-700 dark:text-amber-300 block" data-i18n="totalExpensesLabel">المصروفات</span>
-                        <span class="font-black text-amber-900 dark:text-amber-100 text-xs block truncate" id="repExpensesTotal">0</span>
+                    <div class="bg-white/5 p-3 rounded-2xl min-w-0">
+                        <span class="text-[10px] text-slate-400 block">صافي الحركة (الربح/الباقي)</span>
+                        <span class="font-black text-sm text-emerald-400 block truncate" id="repNetTotal">0 د.ع</span>
                     </div>
-                    <div class="p-2.5 rounded-2xl bg-slate-900 text-white min-w-0">
-                        <span class="text-[10px] text-slate-300 block" data-i18n="grandTotalLabel">الإجمالي</span>
-                        <span class="font-black text-emerald-400 text-xs block truncate" id="repGrandTotal">0</span>
+                    <div class="bg-white/5 p-3 rounded-2xl min-w-0">
+                        <span class="text-[10px] text-slate-400 block">إجمالي المشتريات</span>
+                        <span class="font-black text-sm text-emerald-300 block truncate" id="repPurchasesTotal">0 د.ع</span>
+                    </div>
+                    <div class="bg-white/5 p-3 rounded-2xl min-w-0">
+                        <span class="text-[10px] text-slate-400 block">إجمالي المصروفات</span>
+                        <span class="font-black text-sm text-amber-400 block truncate" id="repExpensesTotal">0 د.ع</span>
                     </div>
                 </div>
-                <div id="reportArchiveList" class="space-y-3"></div>
             </div>
+
+            <!-- Day-by-Day Detailed Timeline -->
+            <div id="reportTimelineContainer" class="space-y-4"></div>
         </div>
     </main>
 
-    <!-- Bottom Mobile Navigation Bar -->
+    <!-- Bottom Mobile Navigation Bar (5 Tabs) -->
     <nav id="bottomNav" class="app-bottom-nav fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 z-40 shadow-lg no-print">
-        <div class="max-w-3xl mx-auto grid grid-cols-4 gap-1.5 px-2 pt-2">
-            <button type="button" onclick="switchTab('shopping')" id="tabBtn-shopping" class="min-h-[52px] py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400">
-                <i class="fa-solid fa-basket-shopping text-base"></i>
-                <span data-i18n="tabShopping">قائمة الشراء</span>
+        <div class="max-w-3xl mx-auto grid grid-cols-5 gap-1 px-1.5 pt-2">
+            <button type="button" onclick="switchTab('shopping')" id="tabBtn-shopping" class="min-h-[52px] py-2 px-0.5 rounded-2xl font-bold text-[10px] sm:text-[11px] flex flex-col items-center justify-center gap-1 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400">
+                <i class="fa-solid fa-basket-shopping text-base"></i><span>الشراء</span>
             </button>
-            <button type="button" onclick="switchTab('expenses')" id="tabBtn-expenses" class="min-h-[52px] py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400">
-                <i class="fa-solid fa-wallet text-base"></i>
-                <span data-i18n="tabExpenses">المصروفات</span>
+            <button type="button" onclick="switchTab('expenses')" id="tabBtn-expenses" class="min-h-[52px] py-2 px-0.5 rounded-2xl font-bold text-[10px] sm:text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400">
+                <i class="fa-solid fa-wallet text-base"></i><span>المصروفات</span>
             </button>
-            <button type="button" onclick="switchTab('materials')" id="tabBtn-materials" class="min-h-[52px] py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400">
-                <i class="fa-solid fa-boxes-stacked text-base"></i>
-                <span data-i18n="tabMaterials">المواد</span>
+            <button type="button" onclick="switchTab('cashbox')" id="tabBtn-cashbox" class="relative min-h-[52px] py-2 px-0.5 rounded-2xl font-bold text-[10px] sm:text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400">
+                <span id="cashboxNewPill" class="absolute -top-1.5 right-1 bg-emerald-600 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full shadow-xs">جديد</span>
+                <i class="fa-solid fa-vault text-base"></i><span>القاصة</span>
             </button>
-            <button type="button" onclick="switchTab('reports')" id="tabBtn-reports" class="min-h-[52px] py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400">
-                <i class="fa-solid fa-file-invoice-dollar text-base"></i>
-                <span data-i18n="tabReports">التقارير</span>
+            <button type="button" onclick="switchTab('materials')" id="tabBtn-materials" class="min-h-[52px] py-2 px-0.5 rounded-2xl font-bold text-[10px] sm:text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400">
+                <i class="fa-solid fa-boxes-stacked text-base"></i><span>المواد</span>
+            </button>
+            <button type="button" onclick="switchTab('reports')" id="tabBtn-reports" class="min-h-[52px] py-2 px-0.5 rounded-2xl font-bold text-[10px] sm:text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400">
+                <i class="fa-solid fa-file-invoice-dollar text-base"></i><span>التقارير</span>
             </button>
         </div>
     </nav>
 
+    <!-- ONBOARDING SPOTLIGHT & ARROW FOR CASHBOX -->
+    <div id="cashboxOnboardingOverlay" onclick="if(event.target===this) dismissCashboxGuide(false)" class="fixed inset-0 bg-slate-950/60 backdrop-blur-[1px] z-50 hidden no-print">
+        <div id="cashboxGuideCard" style="bottom: calc(env(safe-area-inset-bottom, 10px) + 78px);" class="fixed left-3 right-3 max-w-md mx-auto bg-white dark:bg-slate-800 rounded-3xl p-4 shadow-2xl border-2 border-emerald-500 space-y-3">
+            <!-- Badges -->
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-600 text-white">
+                        <i class="fa-solid fa-sparkles text-[10px]"></i><span>قسم جديد</span>
+                    </span>
+                    <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
+                        <span>قيد العمل والتطوير</span>
+                    </span>
+                </div>
+                <button type="button" onclick="dismissCashboxGuide(false)" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div class="space-y-1">
+                <h4 class="font-black text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-vault text-emerald-600"></i>
+                    <span>القاصة اليومية وإغلاق الصندوق</span>
+                </h4>
+                <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    قسم جديد نشتغل عليه حالياً لتسهيل جردك اليومي؛ تگدر من خلاله تسجل <b>مبيعات اليوم</b> بنهاية الدوام، والنظام تلقائياً يخصم <b>المشتريات والمصروفات</b> ويطلعلك <b>صافي القاصة</b> ويربطه بالتقارير العامة.
+                </p>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex items-center gap-2 pt-0.5">
+                <button type="button" onclick="dismissCashboxGuide(true)" class="flex-1 min-h-[42px] bg-emerald-600 active:scale-95 text-white font-bold text-xs rounded-2xl shadow-md transition flex items-center justify-center gap-1.5">
+                    <span>جرّب القسم هسة</span>
+                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                </button>
+                <button type="button" onclick="dismissCashboxGuide(false)" class="min-h-[42px] px-4 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-2xl transition">
+                    تمام، فهمت
+                </button>
+            </div>
+
+            <!-- Pointing Down Arrow directly toward Cashbox Icon -->
+            <div id="cashboxPointerArrow" class="absolute -bottom-8 flex flex-col items-center pointer-events-none animate-point-down" style="left: 50%; transform: translateX(-50%);">
+                <div class="w-0 h-0 border-l-[11px] border-l-transparent border-r-[11px] border-r-transparent border-t-[13px] border-t-emerald-500"></div>
+                <i class="fa-solid fa-arrow-down text-emerald-400 text-lg -mt-0.5 drop-shadow"></i>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: FUTURE ADS -->
-    <div id="futureAdsModal" onclick="if(event.target===this) closeFutureAdsModal()" class="fixed inset-0 bg-slate-900/65 z-50 flex items-center justify-center p-4 hidden">
+    <div id="futureAdsModal" onclick="if(event.target===this) toggleModal('futureAdsModal', false)" class="fixed inset-0 bg-slate-900/65 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center space-y-4 border border-amber-200 dark:border-amber-800/50">
             <div class="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto text-2xl shadow-sm">
                 <i class="fa-solid fa-bullhorn"></i>
@@ -394,25 +434,25 @@
                 <h3 class="font-black text-xl text-slate-900 dark:text-white pt-1">قريباً.. ضع إعلانك هنا</h3>
                 <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">هذه المساحة مخصصة للعروض التجارية وإعلانات الموردين والشركات مستقبلاً.</p>
             </div>
-            <button type="button" onclick="closeFutureAdsModal()" class="w-full min-h-[46px] bg-emerald-600 active:scale-95 text-white font-bold rounded-2xl transition">إغلاق</button>
+            <button type="button" onclick="toggleModal('futureAdsModal', false)" class="w-full min-h-[46px] bg-emerald-600 active:scale-95 text-white font-bold rounded-2xl transition">إغلاق</button>
         </div>
     </div>
 
     <!-- MODAL: ADD MATERIAL -->
-    <div id="materialModal" onclick="if(event.target===this) closeMaterialModal()" class="fixed inset-0 bg-slate-900/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden overflow-y-auto">
+    <div id="materialModal" onclick="if(event.target===this) toggleModal('materialModal', false)" class="fixed inset-0 bg-slate-900/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden overflow-y-auto">
         <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90dvh] overflow-y-auto pb-8">
             <div class="flex items-center justify-between">
-                <h3 class="font-black text-lg text-slate-900 dark:text-white" data-i18n="btnNewMaterial">إضافة مادة جديدة</h3>
-                <button type="button" onclick="closeMaterialModal()" class="w-11 h-11 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                <h3 class="font-black text-lg text-slate-900 dark:text-white">إضافة مادة جديدة</h3>
+                <button type="button" onclick="toggleModal('materialModal', false)" class="w-11 h-11 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form onsubmit="saveMaterial(event)" class="space-y-3">
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="matNameLabel">اسم المادة *</label>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">اسم المادة *</label>
                     <input type="text" id="matName" required placeholder="مثلاً: طحين، زيت..." class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-4 py-2.5">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="min-w-0">
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="matUnitLabel">الوحدة *</label>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">الوحدة *</label>
                         <select id="matUnit" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3 py-2.5">
                             <option value="كارتون">كارتون</option>
                             <option value="شليف">شليف</option>
@@ -425,30 +465,28 @@
                         </select>
                     </div>
                     <div class="min-w-0">
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="matPriceLabel">السعر التقريبي</label>
-                        <input type="number" step="any" inputmode="decimal" id="matDefaultPrice" placeholder="0" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5">
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">السعر التقريبي</label>
+                        <input type="number" step="any" inputmode="decimal" id="matDefaultPrice" min="0" value="0" onfocus="if(this.value==='0')this.value=''" onblur="if(this.value==='')this.value='0'" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3.5 py-2.5">
                     </div>
                 </div>
-                <button type="submit" id="saveMaterialBtn" class="w-full min-h-[48px] bg-emerald-600 active:scale-[0.99] text-white font-bold py-3 rounded-2xl transition" data-i18n="btnSave">حفظ المادة</button>
+                <button type="submit" class="w-full min-h-[48px] bg-emerald-600 active:scale-[0.99] text-white font-bold py-3 rounded-2xl transition">حفظ المادة</button>
             </form>
         </div>
     </div>
 
     <!-- MODAL: SETTINGS & PROFILE -->
-    <div id="settingsModal" onclick="if(event.target===this) closeSettingsModal()" class="fixed inset-0 bg-slate-900/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden overflow-y-auto">
+    <div id="settingsModal" onclick="if(event.target===this) toggleModal('settingsModal', false)" class="fixed inset-0 bg-slate-900/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden overflow-y-auto">
         <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90dvh] overflow-y-auto pb-8">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
                 <h3 class="font-black text-lg text-slate-900 dark:text-white flex items-center gap-2">
-                    <i class="fa-solid fa-sliders text-emerald-600"></i>
-                    <span data-i18n="settingsTitle">الإعدادات والبروفايل</span>
+                    <i class="fa-solid fa-sliders text-emerald-600"></i><span>الإعدادات والبروفايل</span>
                 </h3>
-                <button type="button" onclick="closeSettingsModal()" class="w-11 h-11 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" onclick="toggleModal('settingsModal', false)" class="w-11 h-11 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
             <form onsubmit="saveSettings(event)" class="space-y-3.5">
-                <!-- البروفايل -->
                 <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 space-y-2.5">
-                    <div class="text-xs font-bold text-emerald-600 dark:text-emerald-400" data-i18n="profileSectionTitle">الملف الشخصي (البروفايل)</div>
+                    <div class="text-xs font-bold text-emerald-600 dark:text-emerald-400">الملف الشخصي (البروفايل)</div>
                     <div class="flex items-center gap-3">
                         <div class="relative shrink-0">
                             <img id="settingsAvatarPreview" src="" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-500 bg-white">
@@ -458,656 +496,300 @@
                             <input type="file" id="settingsAvatarInput" accept="image/*" class="hidden" onchange="previewProfileAvatar(event)">
                         </div>
                         <div class="flex-1 min-w-0">
-                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="usernameLabel">اسم المستخدم</label>
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">اسم المستخدم</label>
                             <input type="text" id="settingUserName" required class="w-full min-h-[44px] bg-white dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2">
                         </div>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="projectNameLabel">تسمية المشروع / المطعم</label>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">تسمية المشروع / المطعم</label>
                     <input type="text" id="settingAppName" required class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-4 py-2.5">
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="min-w-0">
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="themeLabel">المظهر</label>
-                        <select id="settingThemeMode" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3 py-2.5">
-                            <option value="light" data-i18n="themeLight">نهاري</option>
-                            <option value="dark" data-i18n="themeDark">ليلي</option>
-                        </select>
-                    </div>
-                    <div class="min-w-0">
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1" data-i18n="languageLabel">اللغة</label>
-                        <select id="settingLanguage" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3 py-2.5">
-                            <option value="ar">العربية</option>
-                            <option value="en">English</option>
-                        </select>
-                    </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">المظهر</label>
+                    <select id="settingThemeMode" class="w-full min-h-[48px] bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-2xl px-3 py-2.5">
+                        <option value="light">نهاري</option>
+                        <option value="dark">ليلي</option>
+                    </select>
                 </div>
 
                 <div class="pt-1 flex gap-2">
-                    <button type="submit" class="flex-1 min-h-[48px] bg-emerald-600 text-white font-bold py-3 rounded-2xl transition shadow-md" data-i18n="btnSaveSettings">حفظ التغييرات</button>
-                    <button type="button" onclick="logoutUser()" class="min-h-[48px] bg-rose-50 dark:bg-rose-950/60 text-rose-600 font-bold px-4 py-3 rounded-2xl transition" data-i18n="btnLogout">خروج</button>
+                    <button type="submit" class="flex-1 min-h-[48px] bg-emerald-600 text-white font-bold py-3 rounded-2xl transition shadow-md">حفظ التغييرات</button>
+                    <button type="button" onclick="logoutUser()" class="min-h-[48px] bg-rose-50 dark:bg-rose-950/60 text-rose-600 font-bold px-4 py-3 rounded-2xl transition">خروج</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- إشعارات داخل المنصة (In-App Notification Banner) -->
-    <div id="inAppNotification" onclick="hideInAppNotification()" class="fixed top-3 left-3 right-3 max-w-md mx-auto bg-slate-900 dark:bg-slate-800 text-white p-3.5 rounded-2xl shadow-2xl border border-emerald-500/40 flex items-center gap-3 -translate-y-36 opacity-0 pointer-events-none transition-all duration-300 z-50 cursor-pointer no-print">
-        <div id="inAppNotifIcon" class="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center shrink-0">
-            <i class="fa-solid fa-bell text-base"></i>
-        </div>
+    <!-- In-App Notification -->
+    <div id="inAppNotification" onclick="this.classList.add('-translate-y-36','opacity-0','pointer-events-none')" class="fixed top-3 left-3 right-3 max-w-md mx-auto bg-slate-900 dark:bg-slate-800 text-white p-3.5 rounded-2xl shadow-2xl border border-emerald-500/40 flex items-center gap-3 -translate-y-36 opacity-0 pointer-events-none transition-all duration-300 z-50 cursor-pointer no-print">
+        <div id="inAppNotifIcon" class="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center shrink-0"><i class="fa-solid fa-bell text-base"></i></div>
         <div class="min-w-0 flex-1">
             <div id="inAppNotifTitle" class="font-black text-xs text-emerald-400 truncate">دُگّان</div>
-            <div id="inAppNotifBody" class="text-xs text-slate-100 leading-snug line-clamp-2">تم الحفظ بنجاح</div>
+            <div id="inAppNotifBody" class="text-xs text-slate-100 leading-snug line-clamp-2"></div>
         </div>
-        <button type="button" class="w-7 h-7 rounded-lg bg-white/10 text-slate-300 flex items-center justify-center shrink-0 text-xs">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
     </div>
 
-    <!-- JavaScript Application Logic -->
     <script>
+        const APP_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2316a34a'/%3E%3Ctext x='50' y='62' font-size='34' font-weight='bold' font-family='sans-serif' text-anchor='middle' fill='white'%3Eدُگّان%3C/text%3E%3C/svg%3E";
         const CLOUD_CACHE_KEY = 'daggan_cloud_cache_v6';
         const LOCAL_DEMO_KEY = 'daggan_local_demo_v6';
         const DEMO_SESSION_KEY = 'restaurant_procurement_demo_mode';
-        const SYNC_QUEUE_KEY = 'daggan_sync_queue_v5';
-
-        // توليد أيقونة التطبيق برمجياً بصيغة PNG حقيقية (512x512) بدون الحاجة لأي ملف صورة خارجي
-        function generateAppIconDataUrl(size = 512) {
-            try {
-                const canvas = document.createElement('canvas');
-                canvas.width = size;
-                canvas.height = size;
-                const ctx = canvas.getContext('2d');
-                const r = size * 0.22;
-
-                // خلفية دائرية الحواف باللون الأخضر الزمردي
-                ctx.fillStyle = '#16a34a';
-                ctx.beginPath();
-                ctx.moveTo(r, 0);
-                ctx.lineTo(size - r, 0);
-                ctx.quadraticCurveTo(size, 0, size, r);
-                ctx.lineTo(size, size - r);
-                ctx.quadraticCurveTo(size, size, size - r, size);
-                ctx.lineTo(r, size);
-                ctx.quadraticCurveTo(0, size, 0, size - r);
-                ctx.lineTo(0, r);
-                ctx.quadraticCurveTo(0, 0, r, 0);
-                ctx.closePath();
-                ctx.fill();
-
-                // رسم أيقونة سلة التسوق باللون الأبيض
-                ctx.strokeStyle = '#ffffff';
-                ctx.fillStyle = '#ffffff';
-                ctx.lineWidth = size * 0.055;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-
-                // مقبض السلة
-                ctx.beginPath();
-                ctx.arc(size * 0.5, size * 0.38, size * 0.14, Math.PI, 0);
-                ctx.stroke();
-
-                // جسم السلة
-                ctx.beginPath();
-                ctx.moveTo(size * 0.28, size * 0.38);
-                ctx.lineTo(size * 0.72, size * 0.38);
-                ctx.lineTo(size * 0.67, size * 0.68);
-                ctx.lineTo(size * 0.33, size * 0.68);
-                ctx.closePath();
-                ctx.fill();
-
-                // نص دُگّان أسفل السلة
-                ctx.font = `900 ${Math.round(size * 0.15)}px Cairo, sans-serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('دُگّان', size * 0.5, size * 0.83);
-
-                return canvas.toDataURL('image/png');
-            } catch (e) {
-                return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="%2316a34a"/><text x="50" y="62" font-size="38" font-weight="bold" text-anchor="middle" fill="white">دُگّان</text></svg>';
-            }
-        }
-
-        const GENERATED_APP_ICON = generateAppIconDataUrl(512);
-        const GENERATED_APP_ICON_192 = generateAppIconDataUrl(192);
-
-        // حقن الأيقونة المولّدة في Apple Touch Icon و Favicon
-        (function injectDynamicIcons() {
-            const appleLink = document.createElement('link');
-            appleLink.rel = 'apple-touch-icon';
-            appleLink.href = GENERATED_APP_ICON_192;
-            document.head.appendChild(appleLink);
-
-            const favLink = document.createElement('link');
-            favLink.rel = 'icon';
-            favLink.type = 'image/png';
-            favLink.href = GENERATED_APP_ICON_192;
-            document.head.appendChild(favLink);
-        })();
+        const CASHBOX_INTRO_KEY = 'daggan_cashbox_intro_seen_v1';
 
         let currentUser = null;
         let isCloudMode = false;
         let pendingAvatarFile = null;
         let pendingAvatarDataUrl = null;
-        let isFlushingQueue = false;
-        let inAppNotifTimer = null;
+        let notifTimer = null;
 
-        const pendingDeletedTempIds = new Set();
-
-        function getDefaultAppData(isDemo = false) {
-            return {
-                appName: "دُگّان",
-                userName: isDemo ? "حساب محلي" : "مستخدم",
-                avatarUrl: "",
-                materials: [],
-                activeCart: [],
-                archiveSessions: [],
-                expenses: [],
-                theme: localStorage.getItem('daggan_theme') || 'light',
-                lang: localStorage.getItem('daggan_lang') || 'ar'
-            };
-        }
-
-        let appData = getDefaultAppData(false);
-
-        const I18N = {
-            ar: {
-                headerSubtitle: "إدارة المواد والمصروفات والتحاسب",
-                tabShopping: "قائمة الشراء",
-                tabExpenses: "المصروفات",
-                tabMaterials: "المواد",
-                tabReports: "التقارير",
-                cartSummaryTitle: "إجمالي قائمة الشراء الحالية",
-                itemsUnit: "مواد",
-                checkoutBtn: "إتمام التحاسب وترحيل القائمة",
-                addToCartTitle: "إضافة مادة لقائمة الشراء",
-                quickNewMat: "مادة جديدة",
-                labelMaterial: "المادة *",
-                labelQty: "الكمية *",
-                labelPrice: "السعر *",
-                btnAdd: "إضافة للقائمة",
-                currentCartTitle: "مواد قائمة الشراء الحالية",
-                btnClearCart: "تفريغ",
-                todayExpensesLabel: "مصروفات اليوم",
-                allExpensesLabel: "إجمالي المصروفات الكلي",
-                addExpenseTitle: "تسجيل مصروف يومي جديد",
-                expTitleLabel: "بيان المصروف *",
-                expCatLabel: "التصنيف *",
-                expAmountLabel: "المبلغ (د.ع) *",
-                labelDate: "التاريخ *",
-                btnSaveExpense: "حفظ المصروف",
-                expFilterTitle: "تقرير المصروفات (من - إلى)",
-                fromDate: "من تاريخ",
-                toDate: "إلى تاريخ",
-                btnReset: "إعادة ضبط",
-                expensesRecordTitle: "سجل المصروفات اليومية",
-                materialsTitle: "إدارة المواد الأساسية",
-                materialsSub: "تعريف المواد ووحداتها الثابتة",
-                btnNewMaterial: "إضافة مادة",
-                reportsTitle: "السجل والتقارير المفصلة",
-                btnShowReport: "عرض التقرير",
-                totalPurchasesLabel: "المشتريات",
-                totalExpensesLabel: "المصروفات",
-                grandTotalLabel: "الإجمالي",
-                matNameLabel: "اسم المادة *",
-                matUnitLabel: "الوحدة *",
-                matPriceLabel: "السعر التقريبي",
-                btnSave: "حفظ المادة",
-                settingsTitle: "الإعدادات والبروفايل",
-                profileSectionTitle: "الملف الشخصي (البروفايل)",
-                usernameLabel: "اسم المستخدم",
-                projectNameLabel: "تسمية المشروع / المطعم",
-                themeLabel: "المظهر",
-                themeLight: "نهاري",
-                themeDark: "ليلي",
-                languageLabel: "اللغة",
-                btnSaveSettings: "حفظ التغييرات",
-                btnLogout: "خروج",
-                listNumber: "قائمة رقم",
-                btnDetails: "التفاصيل",
-                purchasedItemsHeader: "تفاصيل المواد المشتراة:"
-            },
-            en: {
-                headerSubtitle: "Purchases & Daily Expenses",
-                tabShopping: "Shopping",
-                tabExpenses: "Expenses",
-                tabMaterials: "Materials",
-                tabReports: "Reports",
-                cartSummaryTitle: "Active Shopping List Total",
-                itemsUnit: "items",
-                checkoutBtn: "Checkout & Archive List",
-                addToCartTitle: "Add Item to Shopping List",
-                quickNewMat: "New Material",
-                labelMaterial: "Material *",
-                labelQty: "Quantity *",
-                labelPrice: "Price *",
-                btnAdd: "Add to List",
-                currentCartTitle: "Current Shopping Items",
-                btnClearCart: "Clear",
-                todayExpensesLabel: "Today's Expenses",
-                allExpensesLabel: "Total Expenses",
-                addExpenseTitle: "Record New Expense",
-                expTitleLabel: "Description *",
-                expCatLabel: "Category *",
-                expAmountLabel: "Amount (IQD) *",
-                labelDate: "Date *",
-                btnSaveExpense: "Save Expense",
-                expFilterTitle: "Expenses Report (Date Range)",
-                fromDate: "From Date",
-                toDate: "To Date",
-                btnReset: "Reset",
-                expensesRecordTitle: "Daily Expenses Log",
-                materialsTitle: "Materials Management",
-                materialsSub: "Define materials and units",
-                btnNewMaterial: "Add Material",
-                reportsTitle: "Detailed Records & Reports",
-                btnShowReport: "Show Report",
-                totalPurchasesLabel: "Purchases",
-                totalExpensesLabel: "Expenses",
-                grandTotalLabel: "Total",
-                matNameLabel: "Material Name *",
-                matUnitLabel: "Unit *",
-                matPriceLabel: "Estimated Price",
-                btnSave: "Save Material",
-                settingsTitle: "Settings & Profile",
-                profileSectionTitle: "User Profile",
-                usernameLabel: "Username",
-                projectNameLabel: "Project / Restaurant Name",
-                themeLabel: "Theme",
-                themeLight: "Light",
-                themeDark: "Dark",
-                languageLabel: "Language",
-                btnSaveSettings: "Save Changes",
-                btnLogout: "Logout",
-                listNumber: "List #",
-                btnDetails: "Details",
-                purchasedItemsHeader: "Purchased Materials Details:"
-            }
+        let appData = {
+            appName: "دُگّان",
+            userName: "مستخدم",
+            avatarUrl: "",
+            materials: [],
+            activeCart: [],
+            archiveSessions: [],
+            expenses: [],
+            cashbox: [],
+            theme: localStorage.getItem('daggan_theme') || 'light'
         };
 
-        function t(key) {
-            const lang = appData.lang || 'ar';
-            return (I18N[lang] && I18N[lang][key]) || I18N.ar[key] || key;
-        }
-
-        function getActiveStorageKey() {
-            if (isCloudMode && currentUser && currentUser.id) {
-                return `${CLOUD_CACHE_KEY}_${currentUser.id}`;
-            }
-            return LOCAL_DEMO_KEY;
-        }
-
-        function getTodayISO() {
-            const now = new Date();
-            const yyyy = now.getFullYear();
-            const mm = String(now.getMonth() + 1).padStart(2, '0');
-            const dd = String(now.getDate()).padStart(2, '0');
-            return `${yyyy}-${mm}-${dd}`;
-        }
-
-        function formatDateTimeHHMM(dateObj = new Date()) {
-            const yyyy = dateObj.getFullYear();
-            const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const dd = String(dateObj.getDate()).padStart(2, '0');
-            const hh = String(dateObj.getHours()).padStart(2, '0');
-            const min = String(dateObj.getMinutes()).padStart(2, '0');
-            return `${yyyy}-${mm}-${dd} | ${hh}:${min}`;
-        }
-
-        function setSyncBar(show) {
-            const bar = document.getElementById('syncBar');
-            if (bar) bar.classList.toggle('hidden', !show);
-        }
-
-        function openFutureAdsModal() {
-            document.getElementById('futureAdsModal').classList.remove('hidden');
-        }
-
-        function closeFutureAdsModal() {
-            document.getElementById('futureAdsModal').classList.add('hidden');
-        }
-
-        // --- إشعارات داخل المنصة فقط ---
-        function hideInAppNotification() {
-            const el = document.getElementById('inAppNotification');
-            if (!el) return;
-            el.classList.add('-translate-y-36', 'opacity-0', 'pointer-events-none');
-        }
-
-        function showInAppNotification(title, body, type = 'success') {
-            const el = document.getElementById('inAppNotification');
-            const titleEl = document.getElementById('inAppNotifTitle');
-            const bodyEl = document.getElementById('inAppNotifBody');
-            const iconBox = document.getElementById('inAppNotifIcon');
-            if (!el) return;
-
-            const styles = {
-                success: { border: 'border-emerald-500/40', iconBg: 'bg-emerald-600/20 text-emerald-400', titleColor: 'text-emerald-400', icon: 'fa-circle-check' },
-                warning: { border: 'border-amber-500/40', iconBg: 'bg-amber-500/20 text-amber-400', titleColor: 'text-amber-400', icon: 'fa-triangle-exclamation' },
-                danger: { border: 'border-rose-500/40', iconBg: 'bg-rose-500/20 text-rose-400', titleColor: 'text-rose-400', icon: 'fa-trash-can' },
-                info: { border: 'border-sky-500/40', iconBg: 'bg-sky-500/20 text-sky-400', titleColor: 'text-sky-400', icon: 'fa-bell' }
-            };
-
-            const s = styles[type] || styles.success;
-            el.className = `fixed top-3 left-3 right-3 max-w-md mx-auto bg-slate-900 dark:bg-slate-800 text-white p-3.5 rounded-2xl shadow-2xl border ${s.border} flex items-center gap-3 transition-all duration-300 z-50 cursor-pointer no-print`;
-            iconBox.className = `w-10 h-10 rounded-xl ${s.iconBg} flex items-center justify-center shrink-0`;
-            iconBox.innerHTML = `<i class="fa-solid ${s.icon} text-base"></i>`;
-            titleEl.className = `font-black text-xs ${s.titleColor} truncate`;
-            titleEl.innerText = title || appData.appName || 'دُگّان';
-            bodyEl.innerText = body;
-
-            clearTimeout(inAppNotifTimer);
-            inAppNotifTimer = setTimeout(hideInAppNotification, 3200);
-        }
-
-        function sendAppNotification(title, body, type = 'info') {
-            showInAppNotification(title, body, type);
-        }
-
-        function showToast(msg, type = 'success') {
-            showInAppNotification(appData.appName || 'دُگّان', msg, type);
-        }
-
-        function initMobileKeyboardHandler() {
-            const nav = document.getElementById('bottomNav');
-            if (!nav || !window.visualViewport) return;
-
-            const baseHeight = window.innerHeight;
-            window.visualViewport.addEventListener('resize', () => {
-                const keyboardOpen = window.visualViewport.height < baseHeight * 0.72;
-                nav.style.display = keyboardOpen ? 'none' : '';
-            });
-        }
-
-        // --- إدارة طابور المزامنة ---
-        function getSyncQueue() {
-            try { return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]'); } catch (e) { return []; }
-        }
-
-        function saveSyncQueue(queue) {
-            try { localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue)); } catch (e) {}
-        }
-
-        function enqueueSyncOp(op) {
-            const queue = getSyncQueue();
-            queue.push({ ...op, queuedAt: Date.now() });
-            saveSyncQueue(queue);
-            renderUserSessionHeader();
-        }
-
-        function removeQueuedOpByTempId(tempId) {
-            const queue = getSyncQueue().filter(op => op.tempId !== tempId);
-            saveSyncQueue(queue);
-        }
-
-        async function flushSyncQueue() {
-            if (!isCloudMode || !supabaseClient || !currentUser || !navigator.onLine || isFlushingQueue) return;
-            let queue = getSyncQueue();
-            if (queue.length === 0) return;
-
-            isFlushingQueue = true;
-            setSyncBar(true);
-            const tempToRealIdMap = {};
-
-            try {
-                while (queue.length > 0) {
-                    const op = queue[0];
-                    if (op.tempId && pendingDeletedTempIds.has(op.tempId)) {
-                        pendingDeletedTempIds.delete(op.tempId);
-                        queue.shift();
-                        saveSyncQueue(queue);
-                        continue;
-                    }
-
-                    if (op.type === 'insert_material') {
-                        const { data, error } = await supabaseClient.from('materials').insert([{ ...op.payload, user_id: currentUser.id }]).select().single();
-                        if (error) throw error;
-                        if (data) {
-                            tempToRealIdMap[op.tempId] = data.id;
-                            const idx = appData.materials.findIndex(x => x.id === op.tempId);
-                            if (idx !== -1) appData.materials[idx].id = data.id;
-                        }
-                    } else if (op.type === 'insert_cart') {
-                        const payload = { ...op.payload, user_id: currentUser.id };
-                        if (tempToRealIdMap[payload.material_id]) payload.material_id = tempToRealIdMap[payload.material_id];
-                        const { data, error } = await supabaseClient.from('active_cart').insert([payload]).select().single();
-                        if (error) throw error;
-                        if (data) {
-                            const idx = appData.activeCart.findIndex(x => x.id === op.tempId);
-                            if (idx !== -1) appData.activeCart[idx].id = data.id;
-                        }
-                    } else if (op.type === 'clear_cart') {
-                        const { error } = await supabaseClient.from('active_cart').delete().eq('user_id', currentUser.id);
-                        if (error) throw error;
-                    } else if (op.type === 'checkout_cart') {
-                        const { data, error } = await supabaseClient.from('archive_sessions').insert([{ ...op.payload, user_id: currentUser.id }]).select().single();
-                        if (error) throw error;
-                        if (data) {
-                            const idx = appData.archiveSessions.findIndex(x => x.id === op.tempId);
-                            if (idx !== -1) appData.archiveSessions[idx].id = data.id;
-                        }
-                        const { error: delErr } = await supabaseClient.from('active_cart').delete().eq('user_id', currentUser.id);
-                        if (delErr) throw delErr;
-                    } else if (op.type === 'insert_expense') {
-                        const { data, error } = await supabaseClient.from('expenses').insert([{ ...op.payload, user_id: currentUser.id }]).select().single();
-                        if (error) throw error;
-                        if (data) {
-                            const idx = appData.expenses.findIndex(x => x.id === op.tempId);
-                            if (idx !== -1) appData.expenses[idx].id = data.id;
-                        }
-                    } else if (op.type === 'delete_row') {
-                        const realId = tempToRealIdMap[op.rowId] || op.rowId;
-                        if (!String(realId).match(/^(mat_|cart_|exp_|sess_)/)) {
-                            const { error } = await supabaseClient.from(op.table).delete().eq('id', realId).eq('user_id', currentUser.id);
-                            if (error) throw error;
-                        }
-                    } else if (op.type === 'update_profile') {
-                        const authMeta = { full_name: op.payload.full_name, project_name: op.payload.project_name };
-                        if (op.payload.avatar_url && !op.payload.avatar_url.startsWith('data:')) authMeta.avatar_url = op.payload.avatar_url;
-                        await supabaseClient.auth.updateUser({ data: authMeta });
-                        const { error } = await supabaseClient.from('profiles').upsert({ ...op.payload, id: currentUser.id });
-                        if (error) throw error;
-                    }
-
-                    queue.shift();
-                    saveSyncQueue(queue);
-                    saveLocalData();
-                }
-            } catch (err) {
-                console.warn('Sync paused:', err);
-            } finally {
-                isFlushingQueue = false;
-                setSyncBar(false);
-                renderUserSessionHeader();
-            }
-        }
-
-        window.addEventListener('online', async () => {
-            renderUserSessionHeader();
-            if (isCloudMode && supabaseClient && currentUser) {
-                await flushSyncQueue();
-                await loadDataFromSupabase();
-                updateAllViews();
-                showToast(appData.lang === 'en' ? 'Back online & synced' : 'عادت الشبكة وتمت مزامنة البيانات', 'success');
-            }
-        });
-
-        window.addEventListener('offline', () => {
-            renderUserSessionHeader();
-            showToast(appData.lang === 'en' ? 'Offline mode: changes saved locally' : 'انقطع الاتصال: سيتم الحفظ محلياً والمزامنة تلقائياً', 'warning');
-        });
-
-        window.onload = async function() {
-            const today = getTodayISO();
-            document.getElementById('expDate').value = today;
-            document.getElementById('todayDateDisplay').innerText = today;
-
-            initMobileKeyboardHandler();
-            initPwaInstallPrompt();
-
-            const isDemo = localStorage.getItem(DEMO_SESSION_KEY) === 'true';
-
-            if (isDemo) {
-                currentUser = null;
-                isCloudMode = false;
-                appData = getDefaultAppData(true);
-                loadLocalData(false);
-            } else if (typeof supabaseClient !== 'undefined' && supabaseClient) {
-                try {
-                    const { data: { session } } = await supabaseClient.auth.getSession();
-                    if (session && session.user) {
-                        currentUser = session.user;
-                        isCloudMode = true;
-                        appData = getDefaultAppData(false);
-                        const meta = currentUser.user_metadata || {};
-                        appData.userName = meta.full_name || meta.username || currentUser.email;
-                        appData.appName = meta.project_name || "دُگّان";
-                        loadLocalData(true);
-                        await loadDataFromSupabase();
-                    } else {
-                        window.location.replace('./login.html');
-                        return;
-                    }
-                } catch (e) {
-                    window.location.replace('./login.html');
-                    return;
-                }
-            } else {
-                isCloudMode = false;
-                appData = getDefaultAppData(true);
-                loadLocalData(false);
-            }
-
-            applyThemeAndLang();
-            renderUserSessionHeader();
-            populateSettingsFields();
-            updateAllViews();
+        const getStorageKey = () => (isCloudMode && currentUser) ? `${CLOUD_CACHE_KEY}_${currentUser.id}` : LOCAL_DEMO_KEY;
+        const getTodayISO = () => {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         };
+        const formatDateTime = (d = new Date()) => `${getTodayISO()} | ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        const escapeHtml = s => String(s || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        const toggleModal = (id, show) => document.getElementById(id).classList.toggle('hidden', !show);
 
-        function loadLocalData(skipDefaultSeed = false) {
-            const storageKey = getActiveStorageKey();
-            const saved = localStorage.getItem(storageKey);
+        function notify(body, type = 'success', title = null) {
+            const el = document.getElementById('inAppNotification');
+            const map = {
+                success: ['border-emerald-500/40', 'bg-emerald-600/20 text-emerald-400', 'text-emerald-400', 'fa-circle-check'],
+                warning: ['border-amber-500/40', 'bg-amber-500/20 text-amber-400', 'text-amber-400', 'fa-triangle-exclamation'],
+                danger:  ['border-rose-500/40', 'bg-rose-500/20 text-rose-400', 'text-rose-400', 'fa-trash-can']
+            };
+            const [border, iconBg, titleCol, icon] = map[type] || map.success;
+            el.className = `fixed top-3 left-3 right-3 max-w-md mx-auto bg-slate-900 dark:bg-slate-800 text-white p-3.5 rounded-2xl shadow-2xl border ${border} flex items-center gap-3 transition-all duration-300 z-50 cursor-pointer no-print`;
+            document.getElementById('inAppNotifIcon').className = `w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0`;
+            document.getElementById('inAppNotifIcon').innerHTML = `<i class="fa-solid ${icon} text-base"></i>`;
+            document.getElementById('inAppNotifTitle').className = `font-black text-xs ${titleCol} truncate`;
+            document.getElementById('inAppNotifTitle').innerText = title || appData.appName || 'دُگّان';
+            document.getElementById('inAppNotifBody').innerText = body;
+            clearTimeout(notifTimer);
+            notifTimer = setTimeout(() => el.classList.add('-translate-y-36', 'opacity-0', 'pointer-events-none'), 3000);
+        }
+
+        function saveLocalData() {
+            try { localStorage.setItem(getStorageKey(), JSON.stringify(appData)); }
+            catch (e) {
+                appData.avatarUrl = '';
+                try { localStorage.setItem(getStorageKey(), JSON.stringify(appData)); } catch (_) {}
+            }
+        }
+
+        function loadLocalData(skipSeed = false) {
+            const saved = localStorage.getItem(getStorageKey());
             if (saved) {
                 try {
-                    const parsed = JSON.parse(saved);
-                    appData = { ...appData, ...parsed };
+                    appData = { ...appData, ...JSON.parse(saved) };
+                    if (!Array.isArray(appData.cashbox)) appData.cashbox = [];
                     return;
-                } catch(e) {}
+                } catch (_) {}
             }
-            if (!skipDefaultSeed) {
+            if (!skipSeed) {
                 appData.materials = [
-                    { id: 'm1', name: 'طحين أصفر', unit: 'جيس', defaultPrice: 35000 },
-                    { id: 'm2', name: 'زيت نباتي', unit: 'تنكة', defaultPrice: 45000 }
+                    { id: 'm1', name: 'طحين أصفر', unit: 'جيس', defaultPrice: 0 },
+                    { id: 'm2', name: 'زيت نباتي', unit: 'تنكة', defaultPrice: 0 }
                 ];
                 saveLocalData();
             }
         }
 
-        function saveLocalData() {
-            const storageKey = getActiveStorageKey();
-            try {
-                localStorage.setItem(storageKey, JSON.stringify(appData));
-            } catch (e) {
-                if (appData.avatarUrl && appData.avatarUrl.startsWith('data:')) {
-                    appData.avatarUrl = '';
-                    try { localStorage.setItem(storageKey, JSON.stringify(appData)); } catch (err) {}
-                }
-            }
-        }
-
         async function loadDataFromSupabase() {
             if (!supabaseClient || !currentUser) return;
-            setSyncBar(true);
             try {
-                await flushSyncQueue();
-
-                const [profileRes, matRes, cartRes, archiveRes, expRes] = await Promise.all([
+                const [profileRes, matRes, cartRes, archiveRes, expRes, cbRes] = await Promise.all([
                     supabaseClient.from('profiles').select('*').eq('id', currentUser.id).maybeSingle(),
                     supabaseClient.from('materials').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true }),
                     supabaseClient.from('active_cart').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true }),
                     supabaseClient.from('archive_sessions').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true }),
-                    supabaseClient.from('expenses').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true })
+                    supabaseClient.from('expenses').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true }),
+                    supabaseClient.from('daily_cashbox').select('*').eq('user_id', currentUser.id).order('date', { ascending: true })
                 ]);
-
-                if (getSyncQueue().length > 0) return;
 
                 const meta = currentUser.user_metadata || {};
                 appData.appName = profileRes.data?.project_name || meta.project_name || appData.appName || "دُگّان";
                 appData.userName = profileRes.data?.full_name || meta.full_name || meta.username || currentUser.email;
                 appData.avatarUrl = profileRes.data?.avatar_url || meta.avatar_url || appData.avatarUrl || "";
                 appData.theme = profileRes.data?.theme || localStorage.getItem('daggan_theme') || 'light';
-                appData.lang = profileRes.data?.lang || localStorage.getItem('daggan_lang') || 'ar';
 
                 if (!matRes.error) appData.materials = (matRes.data || []).map(m => ({ id: m.id, name: m.name, unit: m.unit, defaultPrice: Number(m.default_price || 0) }));
                 if (!cartRes.error) appData.activeCart = (cartRes.data || []).map(c => ({ id: c.id, materialId: c.material_id, name: c.name, unit: c.unit, qty: Number(c.qty), price: Number(c.price) }));
                 if (!archiveRes.error) appData.archiveSessions = (archiveRes.data || []).map(s => ({ id: s.id, date: s.date, timestamp: s.timestamp_label, items: s.items || [], total: Number(s.total) }));
                 if (!expRes.error) appData.expenses = (expRes.data || []).map(ex => ({ id: ex.id, title: ex.title, category: ex.category, amount: Number(ex.amount), date: ex.date, notes: ex.notes || '' }));
+                if (!cbRes.error && cbRes.data) appData.cashbox = cbRes.data.map(cb => ({ id: cb.id, date: cb.date, sales: Number(cb.sales), purchases: Number(cb.purchases), expenses: Number(cb.expenses), net: Number(cb.net), notes: cb.notes || '' }));
                 saveLocalData();
-            } catch (err) {
+            } catch (_) {
                 loadLocalData(true);
-            } finally {
-                setSyncBar(false);
             }
         }
 
-        function applyThemeAndLang() {
-            document.documentElement.classList.toggle('dark', appData.theme === 'dark');
-            const lang = appData.lang || 'ar';
-            document.documentElement.lang = lang;
-            document.documentElement.dir = lang === 'en' ? 'ltr' : 'rtl';
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                el.innerText = t(el.getAttribute('data-i18n'));
-            });
+        // --- CASHBOX ONBOARDING SPOTLIGHT ---
+        function positionCashboxArrow() {
+            const btn = document.getElementById('tabBtn-cashbox');
+            const card = document.getElementById('cashboxGuideCard');
+            const arrow = document.getElementById('cashboxPointerArrow');
+            if (!btn || !card || !arrow) return;
+
+            const btnRect = btn.getBoundingClientRect();
+            const cardRect = card.getBoundingClientRect();
+            if (!cardRect.width) return;
+
+            const btnCenterX = btnRect.left + (btnRect.width / 2);
+            const rawLeft = btnCenterX - cardRect.left - 11;
+            const clampedLeft = Math.max(20, Math.min(cardRect.width - 42, rawLeft));
+            arrow.style.left = `${clampedLeft}px`;
+            arrow.style.transform = 'none';
         }
+
+        function initCashboxSpotlight() {
+            if (localStorage.getItem(CASHBOX_INTRO_KEY) === 'true') {
+                document.getElementById('cashboxNewPill')?.remove();
+                return;
+            }
+            const overlay = document.getElementById('cashboxOnboardingOverlay');
+            const nav = document.getElementById('bottomNav');
+            const cashboxBtn = document.getElementById('tabBtn-cashbox');
+            if (!overlay || !cashboxBtn) return;
+
+            nav.style.zIndex = '60';
+            cashboxBtn.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-950', 'text-emerald-700', 'dark:text-emerald-300');
+            overlay.classList.remove('hidden');
+            requestAnimationFrame(positionCashboxArrow);
+        }
+
+        function dismissCashboxGuide(goToCashbox) {
+            localStorage.setItem(CASHBOX_INTRO_KEY, 'true');
+            document.getElementById('cashboxOnboardingOverlay')?.classList.add('hidden');
+            const nav = document.getElementById('bottomNav');
+            if (nav) nav.style.zIndex = '40';
+
+            const cashboxBtn = document.getElementById('tabBtn-cashbox');
+            if (cashboxBtn) {
+                cashboxBtn.classList.remove('ring-2', 'ring-emerald-500');
+            }
+            if (goToCashbox) {
+                document.getElementById('cashboxNewPill')?.remove();
+                switchTab('cashbox');
+            } else {
+                switchTab('shopping');
+            }
+            if (window.__deferredInstallPrompt) showInstallPromptBanner();
+        }
+
+        window.addEventListener('resize', () => {
+            if (!document.getElementById('cashboxOnboardingOverlay')?.classList.contains('hidden')) {
+                positionCashboxArrow();
+            }
+        });
+
+        window.onload = async function() {
+            const today = getTodayISO();
+            document.getElementById('expDate').value = today;
+            document.getElementById('cbDateInput').value = today;
+            document.getElementById('todayDateDisplay').innerText = today;
+
+            if (window.visualViewport) {
+                const baseH = window.innerHeight;
+                window.visualViewport.addEventListener('resize', () => {
+                    document.getElementById('bottomNav').style.display = window.visualViewport.height < baseH * 0.72 ? 'none' : '';
+                });
+            }
+
+            const isDemo = localStorage.getItem(DEMO_SESSION_KEY) === 'true';
+            if (isDemo) {
+                isCloudMode = false;
+                appData.userName = "حساب محلي";
+                loadLocalData(false);
+            } else if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                try {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (!session?.user) return window.location.replace('./login.html');
+                    currentUser = session.user;
+                    isCloudMode = true;
+                    const meta = currentUser.user_metadata || {};
+                    appData.userName = meta.full_name || meta.username || currentUser.email;
+                    appData.appName = meta.project_name || "دُگّان";
+                    loadLocalData(true);
+                    await loadDataFromSupabase();
+                } catch (_) {
+                    return window.location.replace('./login.html');
+                }
+            } else {
+                isCloudMode = false;
+                appData.userName = "حساب محلي";
+                loadLocalData(false);
+            }
+
+            document.documentElement.classList.toggle('dark', appData.theme === 'dark');
+            renderUserHeader();
+            updateAllViews();
+            setTimeout(initCashboxSpotlight, 350);
+            if (window.__deferredInstallPrompt && localStorage.getItem(CASHBOX_INTRO_KEY) === 'true') {
+                showInstallPromptBanner();
+            }
+        };
+
+        window.addEventListener('online', async () => {
+            renderUserHeader();
+            if (isCloudMode) { await loadDataFromSupabase(); updateAllViews(); }
+        });
+        window.addEventListener('offline', renderUserHeader);
 
         function switchTab(tabId) {
-            ['shopping', 'expenses', 'materials', 'reports'].forEach(tId => {
-                document.getElementById(`tabContent-${tId}`).classList.add('hidden');
-                document.getElementById(`tabBtn-${tId}`).className = "min-h-[52px] py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400";
+            ['shopping', 'expenses', 'cashbox', 'materials', 'reports'].forEach(id => {
+                document.getElementById(`tabContent-${id}`).classList.toggle('hidden', id !== tabId);
+                document.getElementById(`tabBtn-${id}`).className = id === tabId
+                    ? "relative min-h-[52px] py-2 px-0.5 rounded-2xl font-bold text-[10px] sm:text-[11px] flex flex-col items-center justify-center gap-1 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400"
+                    : "relative min-h-[52px] py-2 px-0.5 rounded-2xl font-bold text-[10px] sm:text-[11px] flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400";
             });
-            document.getElementById(`tabContent-${tabId}`).classList.remove('hidden');
-            document.getElementById(`tabBtn-${tabId}`).className = "min-h-[52px] py-2 px-1 rounded-2xl font-bold text-[11px] flex flex-col items-center justify-center gap-1 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400";
+            if (tabId === 'cashbox') {
+                document.getElementById('cashboxNewPill')?.remove();
+                onCashboxDateChange();
+            }
+            if (tabId === 'reports') generateReport();
         }
 
-        function renderUserSessionHeader() {
-            const container = document.getElementById('userAccountArea');
+        function renderUserHeader() {
             const badge = document.getElementById('cloudStatusBadge');
-            const pendingCount = getSyncQueue().length;
-
             if (!isCloudMode || !currentUser) {
                 badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 shrink-0 inline-flex items-center gap-1";
                 badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span>محلي</span>`;
-            } else if (!navigator.onLine || pendingCount > 0) {
+            } else if (!navigator.onLine) {
                 badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 shrink-0 inline-flex items-center gap-1";
-                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span><span>${pendingCount > 0 ? `مزامنة (${pendingCount})` : 'غير متصل'}</span>`;
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span>غير متصل</span>`;
             } else {
                 badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800 shrink-0 inline-flex items-center gap-1";
                 badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span>متصل</span>`;
             }
 
-            const avatarSrc = appData.avatarUrl || GENERATED_APP_ICON_192;
-            container.innerHTML = `
+            const avatar = appData.avatarUrl || APP_ICON;
+            document.getElementById('userAccountArea').innerHTML = `
                 <button type="button" onclick="openSettingsModal()" class="h-11 flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 active:scale-95 border border-emerald-200 dark:border-emerald-800 px-2 rounded-xl transition">
-                    <img src="${escapeHtml(avatarSrc)}" onerror="this.onerror=null;this.src=GENERATED_APP_ICON_192" class="w-7 h-7 rounded-full object-cover border border-emerald-400 shrink-0">
+                    <img src="${escapeHtml(avatar)}" onerror="this.src=APP_ICON" class="w-7 h-7 rounded-full object-cover border border-emerald-400 shrink-0">
                     <span class="text-xs font-bold text-emerald-900 dark:text-emerald-200 truncate max-w-[65px] sm:max-w-[100px]">${escapeHtml(appData.userName)}</span>
                 </button>`;
         }
 
         async function logoutUser() {
-            if (!confirm(appData.lang === 'en' ? "Logout now?" : "هل تريد تسجيل الخروج؟")) return;
-            try {
-                if (typeof supabaseClient !== 'undefined' && supabaseClient) {
-                    await supabaseClient.auth.signOut({ scope: 'local' });
-                }
-            } catch (err) {}
-
-            Object.keys(localStorage).forEach((key) => {
-                if (key.startsWith('sb-') && key.endsWith('-auth-token')) localStorage.removeItem(key);
-            });
+            if (!confirm("هل تريد تسجيل الخروج؟")) return;
+            try { if (supabaseClient) await supabaseClient.auth.signOut({ scope: 'local' }); } catch (_) {}
+            Object.keys(localStorage).forEach(k => { if (k.startsWith('sb-') && k.endsWith('-auth-token')) localStorage.removeItem(k); });
             localStorage.removeItem(DEMO_SESSION_KEY);
             sessionStorage.clear();
             window.location.replace('./login.html');
@@ -1119,215 +801,161 @@
             renderMaterialsList();
             renderCartList();
             renderExpensesList();
+            onCashboxDateChange();
+            renderCashboxHistory();
+            generateReport();
         }
 
+        // --- AUTO-RECALCULATE CASHBOX IF PURCHASES OR EXPENSES CHANGE ON THAT DATE ---
+        async function syncCashboxForDate(dateStr) {
+            if (!Array.isArray(appData.cashbox)) return;
+            const idx = appData.cashbox.findIndex(c => c.date === dateStr);
+            if (idx === -1) return;
+
+            const { purchases, expenses } = getDayTotals(dateStr);
+            const sales = Number(appData.cashbox[idx].sales || 0);
+            const net = sales - (purchases + expenses);
+            appData.cashbox[idx] = { ...appData.cashbox[idx], purchases, expenses, net };
+            saveLocalData();
+            renderCashboxHistory();
+
+            if (isCloudMode && supabaseClient && currentUser && navigator.onLine) {
+                try {
+                    await supabaseClient.from('daily_cashbox').upsert({
+                        user_id: currentUser.id,
+                        date: dateStr,
+                        sales,
+                        purchases,
+                        expenses,
+                        net,
+                        notes: appData.cashbox[idx].notes || ''
+                    }, { onConflict: 'user_id,date' });
+                } catch (_) {}
+            }
+        }
+
+        // --- SHOPPING LIST ---
         function updateMaterialsDropdown() {
-            const select = document.getElementById('cartMaterialSelect');
-            let html = `<option value="">-- ${appData.lang === 'en' ? 'Select Material' : 'اختر المادة'} --</option>`;
-            appData.materials.forEach(mat => {
-                html += `<option value="${escapeHtml(mat.id)}" data-price="${mat.defaultPrice || 0}" data-unit="${escapeHtml(mat.unit)}">${escapeHtml(mat.name)} (${escapeHtml(mat.unit)})</option>`;
-            });
-            select.innerHTML = html;
+            document.getElementById('cartMaterialSelect').innerHTML =
+                `<option value="">-- اختر المادة --</option>` +
+                appData.materials.map(m => `<option value="${escapeHtml(m.id)}" data-price="${m.defaultPrice || 0}" data-unit="${escapeHtml(m.unit)}">${escapeHtml(m.name)} (${escapeHtml(m.unit)})</option>`).join('');
         }
 
         function onMaterialSelected() {
-            const select = document.getElementById('cartMaterialSelect');
-            const opt = select.options[select.selectedIndex];
-            if (!opt) return;
-            const price = opt.getAttribute('data-price');
-            if (price) document.getElementById('cartPrice').value = price;
-            document.getElementById('cartQty').value = '1';
+            const sel = document.getElementById('cartMaterialSelect');
+            const opt = sel.options[sel.selectedIndex];
+            document.getElementById('cartPrice').value = opt?.getAttribute('data-price') || '0';
+            document.getElementById('cartQty').value = '0';
         }
 
-        // --- SHOPPING CART ---
         async function addItemToCart(e) {
             e.preventDefault();
-            const select = document.getElementById('cartMaterialSelect');
-            const matId = select.value;
+            const sel = document.getElementById('cartMaterialSelect');
+            const matId = sel.value;
             if (!matId) return;
-            const opt = select.options[select.selectedIndex];
+            const opt = sel.options[sel.selectedIndex];
             const name = opt.text.split(' (')[0];
             const unit = opt.getAttribute('data-unit');
-            const qty = parseFloat(document.getElementById('cartQty').value);
-            const price = parseFloat(document.getElementById('cartPrice').value);
+            const qty = parseFloat(document.getElementById('cartQty').value) || 0;
+            const price = parseFloat(document.getElementById('cartPrice').value) || 0;
 
-            const tempId = 'cart_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            const tempId = 'cart_' + Date.now();
             appData.activeCart.push({ id: tempId, materialId: matId, name, unit, qty, price });
             saveLocalData();
             renderCartList();
 
-            select.value = '';
-            document.getElementById('cartQty').value = '';
-            document.getElementById('cartPrice').value = '';
-            showToast(appData.lang === 'en' ? "Added" : `تمت إضافة (${name}) لقائمة الشراء`, 'success');
+            sel.value = '';
+            document.getElementById('cartQty').value = '0';
+            document.getElementById('cartPrice').value = '0';
+            notify(`تمت إضافة (${name}) لقائمة الشراء`);
 
-            if (isCloudMode && supabaseClient && currentUser) {
-                const payload = { material_id: matId, name, unit, qty, price };
-                if (!navigator.onLine) {
-                    enqueueSyncOp({ tempId, type: 'insert_cart', payload });
-                    return;
-                }
-                setSyncBar(true);
+            if (isCloudMode && supabaseClient && currentUser && navigator.onLine) {
                 try {
-                    const { data, error } = await supabaseClient.from('active_cart').insert([{ user_id: currentUser.id, ...payload }]).select().single();
-                    if (error) throw error;
+                    const { data } = await supabaseClient.from('active_cart').insert([{ user_id: currentUser.id, material_id: matId, name, unit, qty, price }]).select().single();
                     if (data) {
-                        if (pendingDeletedTempIds.has(tempId)) {
-                            pendingDeletedTempIds.delete(tempId);
-                            await supabaseClient.from('active_cart').delete().eq('id', data.id).eq('user_id', currentUser.id);
-                        } else {
-                            const idx = appData.activeCart.findIndex(x => x.id === tempId);
-                            if (idx !== -1) appData.activeCart[idx].id = data.id;
-                            saveLocalData();
-                        }
+                        const idx = appData.activeCart.findIndex(x => x.id === tempId);
+                        if (idx !== -1) { appData.activeCart[idx].id = data.id; saveLocalData(); }
                     }
-                } catch (err) {
-                    if (!pendingDeletedTempIds.has(tempId)) enqueueSyncOp({ tempId, type: 'insert_cart', payload });
-                } finally {
-                    setSyncBar(false);
-                }
+                } catch (_) {}
             }
         }
 
         function renderCartList() {
             const container = document.getElementById('cartItemsList');
-            let total = 0;
-            if (appData.activeCart.length === 0) {
-                container.innerHTML = `<div class="text-center py-10 px-4"><i class="fa-solid fa-basket-shopping text-slate-300 dark:text-slate-600 text-3xl mb-2"></i><p class="text-slate-500 dark:text-slate-400 text-xs">${appData.lang === 'en' ? 'Shopping list is empty' : 'قائمة الشراء فارغة حالياً'}</p></div>`;
-                document.getElementById('activeCartTotal').innerText = '0 د.ع';
-                document.getElementById('activeCartCount').innerText = '0';
-                return;
-            }
-            let html = '';
-            appData.activeCart.forEach((item, idx) => {
-                const itemTotal = item.qty * item.price;
-                total += itemTotal;
-                html += `
-                    <div class="p-3.5 flex items-center justify-between gap-2.5">
-                        <div class="flex items-center gap-2.5 min-w-0">
-                            <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0">${idx + 1}</div>
-                            <div class="min-w-0">
-                                <h4 class="font-bold text-slate-900 dark:text-white text-sm truncate">${escapeHtml(item.name)}</h4>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">${item.qty} ${escapeHtml(item.unit)} × ${Number(item.price).toLocaleString()} د.ع</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 shrink-0">
-                            <span class="font-black text-slate-900 dark:text-white text-sm">${itemTotal.toLocaleString()} د.ع</span>
-                            <button type="button" onclick="removeCartItem('${escapeHtml(item.id)}')" class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/50 active:scale-95 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
-                        </div>
-                    </div>`;
-            });
-            container.innerHTML = html;
+            const total = appData.activeCart.reduce((s, i) => s + (i.qty * i.price), 0);
             document.getElementById('activeCartTotal').innerText = total.toLocaleString() + ' د.ع';
             document.getElementById('activeCartCount').innerText = appData.activeCart.length;
+
+            if (!appData.activeCart.length) {
+                container.innerHTML = `<div class="text-center py-10 px-4"><i class="fa-solid fa-basket-shopping text-slate-300 dark:text-slate-600 text-3xl mb-2"></i><p class="text-slate-500 dark:text-slate-400 text-xs">قائمة الشراء فارغة حالياً</p></div>`;
+                return;
+            }
+            container.innerHTML = appData.activeCart.map((item, idx) => `
+                <div class="p-3.5 flex items-center justify-between gap-2.5">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0">${idx + 1}</div>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-slate-900 dark:text-white text-sm truncate">${escapeHtml(item.name)}</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">${item.qty} ${escapeHtml(item.unit)} × ${Number(item.price).toLocaleString()} د.ع</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="font-black text-slate-900 dark:text-white text-sm">${(item.qty * item.price).toLocaleString()} د.ع</span>
+                        <button type="button" onclick="removeCartItem('${escapeHtml(item.id)}')" class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/50 active:scale-95 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </div>
+                </div>`).join('');
         }
 
         async function removeCartItem(id) {
             appData.activeCart = appData.activeCart.filter(i => i.id !== id);
             saveLocalData();
             renderCartList();
-            showToast(appData.lang === 'en' ? "Removed" : "تمت إزالة المادة من القائمة", 'danger');
-
-            if (!isCloudMode || !supabaseClient || !currentUser) return;
-            if (String(id).startsWith('cart_')) {
-                pendingDeletedTempIds.add(id);
-                removeQueuedOpByTempId(id);
-                return;
-            }
-            if (!navigator.onLine) {
-                enqueueSyncOp({ type: 'delete_row', table: 'active_cart', rowId: id });
-                return;
-            }
-            setSyncBar(true);
-            try {
-                const { error } = await supabaseClient.from('active_cart').delete().eq('id', id).eq('user_id', currentUser.id);
-                if (error) throw error;
-            } catch (err) {
-                enqueueSyncOp({ type: 'delete_row', table: 'active_cart', rowId: id });
-            } finally {
-                setSyncBar(false);
+            notify("تمت إزالة المادة من القائمة", 'danger');
+            if (isCloudMode && supabaseClient && currentUser && navigator.onLine && !String(id).startsWith('cart_')) {
+                try { await supabaseClient.from('active_cart').delete().eq('id', id).eq('user_id', currentUser.id); } catch (_) {}
             }
         }
 
         async function clearCart() {
-            if (!confirm(appData.lang === 'en' ? "Clear shopping list?" : "هل أنت متأكد من تفريغ قائمة الشراء؟")) return;
-            appData.activeCart.forEach(item => {
-                if (String(item.id).startsWith('cart_')) {
-                    pendingDeletedTempIds.add(item.id);
-                    removeQueuedOpByTempId(item.id);
-                }
-            });
+            if (!confirm("هل أنت متأكد من تفريغ قائمة الشراء؟")) return;
             appData.activeCart = [];
             saveLocalData();
             renderCartList();
-            showToast(appData.lang === 'en' ? "List cleared" : "تم تفريغ القائمة بالكامل", 'danger');
-
-            if (isCloudMode && supabaseClient && currentUser) {
-                if (!navigator.onLine) {
-                    enqueueSyncOp({ type: 'clear_cart' });
-                    return;
-                }
-                setSyncBar(true);
-                try {
-                    const { error } = await supabaseClient.from('active_cart').delete().eq('user_id', currentUser.id);
-                    if (error) throw error;
-                } catch (err) {
-                    enqueueSyncOp({ type: 'clear_cart' });
-                } finally {
-                    setSyncBar(false);
-                }
+            notify("تم تفريغ القائمة بالكامل", 'danger');
+            if (isCloudMode && supabaseClient && currentUser && navigator.onLine) {
+                try { await supabaseClient.from('active_cart').delete().eq('user_id', currentUser.id); } catch (_) {}
             }
         }
 
         async function checkoutCart() {
-            if (appData.activeCart.length === 0) {
-                showToast(appData.lang === 'en' ? "List is empty!" : "قائمة الشراء فارغة!", 'warning');
-                return;
-            }
-            if (!confirm(appData.lang === 'en' ? "Checkout and archive this list?" : "إتمام التحاسب وترحيل القائمة إلى السجل؟")) return;
+            if (!appData.activeCart.length) return notify("قائمة الشراء فارغة!", 'warning');
+            if (!confirm("إتمام التحاسب وترحيل القائمة إلى السجل؟")) return;
 
-            const total = appData.activeCart.reduce((sum, i) => sum + (i.qty * i.price), 0);
+            const total = appData.activeCart.reduce((s, i) => s + (i.qty * i.price), 0);
             const dateStr = getTodayISO();
-            const timestamp = formatDateTimeHHMM(new Date());
+            const timestamp = formatDateTime();
             const items = [...appData.activeCart];
-            const tempId = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-
-            items.forEach(item => {
-                if (String(item.id).startsWith('cart_')) {
-                    pendingDeletedTempIds.add(item.id);
-                    removeQueuedOpByTempId(item.id);
-                }
-            });
+            const tempId = 'sess_' + Date.now();
 
             appData.archiveSessions.push({ id: tempId, date: dateStr, timestamp, items, total });
             appData.activeCart = [];
             saveLocalData();
             renderCartList();
+            updateCashboxPreview();
+            await syncCashboxForDate(dateStr);
+            generateReport();
+            notify(`تم إتمام التحاسب للقائمة #${appData.archiveSessions.length} بمبلغ ${total.toLocaleString()} د.ع`);
 
-            const listNum = appData.archiveSessions.length;
-            sendAppNotification(appData.appName, `تم إتمام التحاسب للقائمة رقم #${listNum} بمبلغ ${total.toLocaleString()} د.ع`, 'success');
-
-            if (isCloudMode && supabaseClient && currentUser) {
-                const payload = { date: dateStr, timestamp_label: timestamp, items, total };
-                if (!navigator.onLine) {
-                    enqueueSyncOp({ tempId, type: 'checkout_cart', payload });
-                    return;
-                }
-                setSyncBar(true);
+            if (isCloudMode && supabaseClient && currentUser && navigator.onLine) {
                 try {
-                    const { data, error } = await supabaseClient.from('archive_sessions').insert([{ user_id: currentUser.id, ...payload }]).select().single();
-                    if (error) throw error;
+                    const { data } = await supabaseClient.from('archive_sessions').insert([{ user_id: currentUser.id, date: dateStr, timestamp_label: timestamp, items, total }]).select().single();
                     if (data) {
                         const idx = appData.archiveSessions.findIndex(x => x.id === tempId);
                         if (idx !== -1) appData.archiveSessions[idx].id = data.id;
                         await supabaseClient.from('active_cart').delete().eq('user_id', currentUser.id);
                         saveLocalData();
                     }
-                } catch (err) {
-                    enqueueSyncOp({ tempId, type: 'checkout_cart', payload });
-                } finally {
-                    setSyncBar(false);
-                }
+                } catch (_) {}
             }
         }
 
@@ -1336,163 +964,220 @@
             e.preventDefault();
             const title = document.getElementById('expTitle').value.trim();
             const category = document.getElementById('expCategory').value;
-            const amount = parseFloat(document.getElementById('expAmount').value);
+            const amount = parseFloat(document.getElementById('expAmount').value) || 0;
             const date = document.getElementById('expDate').value || getTodayISO();
             const notes = document.getElementById('expNotes').value.trim();
-            const tempId = 'exp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            const tempId = 'exp_' + Date.now();
 
             appData.expenses.push({ id: tempId, title, category, amount, date, notes });
             saveLocalData();
             renderExpensesList();
+            updateCashboxPreview();
+            await syncCashboxForDate(date);
+            generateReport();
 
             document.getElementById('expTitle').value = '';
-            document.getElementById('expAmount').value = '';
+            document.getElementById('expAmount').value = '0';
             document.getElementById('expNotes').value = '';
-            sendAppNotification(appData.appName, `تم تسجيل مصروف: ${title} (${amount.toLocaleString()} د.ع)`, 'success');
+            notify(`تم تسجيل مصروف: ${title} (${amount.toLocaleString()} د.ع)`);
 
-            if (isCloudMode && supabaseClient && currentUser) {
-                const payload = { title, category, amount, date, notes };
-                if (!navigator.onLine) {
-                    enqueueSyncOp({ tempId, type: 'insert_expense', payload });
-                    return;
-                }
-                setSyncBar(true);
+            if (isCloudMode && supabaseClient && currentUser && navigator.onLine) {
                 try {
-                    const { data, error } = await supabaseClient.from('expenses').insert([{ user_id: currentUser.id, ...payload }]).select().single();
-                    if (error) throw error;
+                    const { data } = await supabaseClient.from('expenses').insert([{ user_id: currentUser.id, title, category, amount, date, notes }]).select().single();
                     if (data) {
-                        if (pendingDeletedTempIds.has(tempId)) {
-                            pendingDeletedTempIds.delete(tempId);
-                            await supabaseClient.from('expenses').delete().eq('id', data.id).eq('user_id', currentUser.id);
-                        } else {
-                            const idx = appData.expenses.findIndex(x => x.id === tempId);
-                            if (idx !== -1) appData.expenses[idx].id = data.id;
-                            saveLocalData();
-                        }
+                        const idx = appData.expenses.findIndex(x => x.id === tempId);
+                        if (idx !== -1) { appData.expenses[idx].id = data.id; saveLocalData(); }
                     }
-                } catch (err) {
-                    if (!pendingDeletedTempIds.has(tempId)) enqueueSyncOp({ tempId, type: 'insert_expense', payload });
-                } finally {
-                    setSyncBar(false);
-                }
+                } catch (_) {}
             }
-        }
-
-        function resetExpenseFilter() {
-            document.getElementById('expFilterStart').value = '';
-            document.getElementById('expFilterEnd').value = '';
-            document.getElementById('expFilterCat').value = 'all';
-            renderExpensesList();
         }
 
         function renderExpensesList() {
-            const container = document.getElementById('expensesListContainer');
             const today = getTodayISO();
-            const todayTotal = appData.expenses.filter(ex => ex.date === today).reduce((sum, ex) => sum + ex.amount, 0);
-            const allTotal = appData.expenses.reduce((sum, ex) => sum + ex.amount, 0);
+            document.getElementById('todayExpensesTotal').innerText = appData.expenses.filter(x => x.date === today).reduce((s, x) => s + x.amount, 0).toLocaleString() + ' د.ع';
+            document.getElementById('allExpensesTotal').innerText = appData.expenses.reduce((s, x) => s + x.amount, 0).toLocaleString() + ' د.ع';
+            document.getElementById('expensesCountLabel').innerText = appData.expenses.length;
 
-            document.getElementById('todayExpensesTotal').innerText = todayTotal.toLocaleString() + ' د.ع';
-            document.getElementById('allExpensesTotal').innerText = allTotal.toLocaleString() + ' د.ع';
-
-            const startDate = document.getElementById('expFilterStart').value;
-            const endDate = document.getElementById('expFilterEnd').value;
-            const catFilter = document.getElementById('expFilterCat').value;
-
-            const filtered = appData.expenses.filter(ex => {
-                const matchStart = !startDate || ex.date >= startDate;
-                const matchEnd = !endDate || ex.date <= endDate;
-                const matchCat = catFilter === 'all' || ex.category === catFilter;
-                return matchStart && matchEnd && matchCat;
-            });
-
-            const filteredSum = filtered.reduce((sum, ex) => sum + ex.amount, 0);
-            document.getElementById('filteredExpensesSum').innerText = filteredSum.toLocaleString() + ' د.ع';
-            document.getElementById('filteredExpensesCount').innerText = filtered.length;
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<div class="text-center py-10 px-4"><p class="text-slate-500 dark:text-slate-400 text-xs">${appData.lang === 'en' ? 'No expenses in this period' : 'لا توجد مصروفات مسجلة في هذه الفترة'}</p></div>`;
+            const container = document.getElementById('expensesListContainer');
+            if (!appData.expenses.length) {
+                container.innerHTML = `<div class="text-center py-10 px-4"><p class="text-slate-500 dark:text-slate-400 text-xs">لا توجد مصروفات مسجلة بعد</p></div>`;
                 return;
             }
-
-            let html = '';
-            [...filtered].reverse().forEach(ex => {
-                html += `
-                    <div class="p-3.5 flex items-center justify-between gap-2.5">
-                        <div class="flex items-center gap-2.5 min-w-0">
-                            <div class="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0"><i class="fa-solid fa-money-bill text-xs"></i></div>
-                            <div class="min-w-0">
-                                <h4 class="font-bold text-slate-900 dark:text-white text-sm truncate">${escapeHtml(ex.title)}</h4>
-                                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${escapeHtml(ex.category)} • ${escapeHtml(ex.date)}</p>
-                            </div>
+            container.innerHTML = [...appData.expenses].reverse().map(ex => `
+                <div class="p-3.5 flex items-center justify-between gap-2.5">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0"><i class="fa-solid fa-money-bill text-xs"></i></div>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-slate-900 dark:text-white text-sm truncate">${escapeHtml(ex.title)}</h4>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${escapeHtml(ex.category)} • ${escapeHtml(ex.date)}</p>
+                            ${ex.notes ? `<p class="text-[11px] text-slate-400 truncate">${escapeHtml(ex.notes)}</p>` : ''}
                         </div>
-                        <div class="flex items-center gap-2 shrink-0">
-                            <span class="font-black text-amber-700 dark:text-amber-400 text-sm">${Number(ex.amount).toLocaleString()} د.ع</span>
-                            <button type="button" onclick="deleteExpense('${escapeHtml(ex.id)}')" class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/50 active:scale-95 text-rose-600 flex items-center justify-center no-print"><i class="fa-solid fa-trash text-xs"></i></button>
-                        </div>
-                    </div>`;
-            });
-            container.innerHTML = html;
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="font-black text-amber-700 dark:text-amber-400 text-sm">${Number(ex.amount).toLocaleString()} د.ع</span>
+                        <button type="button" onclick="deleteExpense('${escapeHtml(ex.id)}')" class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/50 active:scale-95 text-rose-600 flex items-center justify-center no-print"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </div>
+                </div>`).join('');
         }
 
         async function deleteExpense(id) {
-            if (!confirm(appData.lang === 'en' ? "Delete this expense?" : "حذف هذا المصروف؟")) return;
+            if (!confirm("حذف هذا المصروف؟")) return;
+            const target = appData.expenses.find(ex => ex.id === id);
             appData.expenses = appData.expenses.filter(ex => ex.id !== id);
             saveLocalData();
             renderExpensesList();
-            showToast(appData.lang === 'en' ? "Deleted" : "تم حذف المصروف", 'danger');
+            updateCashboxPreview();
+            if (target?.date) await syncCashboxForDate(target.date);
+            generateReport();
+            notify("تم حذف المصروف", 'danger');
+            if (isCloudMode && supabaseClient && currentUser && navigator.onLine && !String(id).startsWith('exp_')) {
+                try { await supabaseClient.from('expenses').delete().eq('id', id).eq('user_id', currentUser.id); } catch (_) {}
+            }
+        }
 
-            if (!isCloudMode || !supabaseClient || !currentUser) return;
-            if (String(id).startsWith('exp_')) {
-                pendingDeletedTempIds.add(id);
-                removeQueuedOpByTempId(id);
+        // --- DAILY CASHBOX (القاصة اليومية) ---
+        function getDayTotals(dateStr) {
+            const purchases = appData.archiveSessions.filter(s => s.date === dateStr).reduce((sum, s) => sum + Number(s.total || 0), 0);
+            const expenses = appData.expenses.filter(ex => ex.date === dateStr).reduce((sum, ex) => sum + Number(ex.amount || 0), 0);
+            return { purchases, expenses };
+        }
+
+        function onCashboxDateChange() {
+            const dateStr = document.getElementById('cbDateInput').value || getTodayISO();
+            document.getElementById('cbSelectedDateLabel').innerText = dateStr;
+            document.getElementById('cbSalesInput').value = '0';
+            document.getElementById('cbNotesInput').value = '';
+            updateCashboxPreview();
+        }
+
+        function updateCashboxPreview() {
+            const dateStr = document.getElementById('cbDateInput').value || getTodayISO();
+            const typedSales = parseFloat(document.getElementById('cbSalesInput').value) || 0;
+            const existing = (appData.cashbox || []).find(c => c.date === dateStr);
+            const displaySales = typedSales > 0 ? typedSales : (existing ? Number(existing.sales || 0) : 0);
+            const { purchases, expenses } = getDayTotals(dateStr);
+            const net = displaySales - (purchases + expenses);
+
+            document.getElementById('cbSalesPreview').innerText = displaySales.toLocaleString() + ' د.ع';
+            document.getElementById('cbPurchasesPreview').innerText = purchases.toLocaleString() + ' د.ع';
+            document.getElementById('cbExpensesPreview').innerText = expenses.toLocaleString() + ' د.ع';
+
+            const netEl = document.getElementById('cbNetPreview');
+            netEl.innerText = net.toLocaleString() + ' د.ع';
+            netEl.className = `text-3xl font-black tracking-tight ${net >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+        }
+
+        async function saveCashboxEntry(e) {
+            e.preventDefault();
+            const date = document.getElementById('cbDateInput').value || getTodayISO();
+            const sales = parseFloat(document.getElementById('cbSalesInput').value) || 0;
+            const notes = document.getElementById('cbNotesInput').value.trim();
+            const { purchases, expenses } = getDayTotals(date);
+            const net = sales - (purchases + expenses);
+
+            if (!Array.isArray(appData.cashbox)) appData.cashbox = [];
+            const existingIdx = appData.cashbox.findIndex(c => c.date === date);
+            const recordId = existingIdx !== -1 ? appData.cashbox[existingIdx].id : ('cb_' + Date.now());
+            const entry = { id: recordId, date, sales, purchases, expenses, net, notes };
+
+            if (existingIdx !== -1) appData.cashbox[existingIdx] = entry;
+            else appData.cashbox.push(entry);
+
+            saveLocalData();
+
+            document.getElementById('cbSalesInput').value = '0';
+            document.getElementById('cbNotesInput').value = '';
+            updateCashboxPreview();
+            renderCashboxHistory();
+            generateReport();
+            notify(`تم حفظ قاصة يوم ${date} (الصافي: ${net.toLocaleString()} د.ع)`);
+
+            if (isCloudMode && supabaseClient && currentUser && navigator.onLine) {
+                try {
+                    const payload = { user_id: currentUser.id, date, sales, purchases, expenses, net, notes };
+                    const { data } = await supabaseClient.from('daily_cashbox').upsert(payload, { onConflict: 'user_id,date' }).select().single();
+                    if (data) {
+                        const idx = appData.cashbox.findIndex(c => c.date === date);
+                        if (idx !== -1) { appData.cashbox[idx].id = data.id; saveLocalData(); }
+                    }
+                } catch (_) {}
+            }
+        }
+
+        function renderCashboxHistory() {
+            const list = appData.cashbox || [];
+            const totalNet = list.reduce((sum, item) => sum + Number(item.net || 0), 0);
+            document.getElementById('cbAllNetTotal').innerText = totalNet.toLocaleString() + ' د.ع';
+
+            const container = document.getElementById('cashboxHistoryList');
+            if (!list.length) {
+                container.innerHTML = `<div class="text-center py-10 px-4"><i class="fa-solid fa-vault text-slate-300 dark:text-slate-600 text-3xl mb-2"></i><p class="text-slate-500 dark:text-slate-400 text-xs">لم يتم إغلاق أي قاصة يومية بعد</p></div>`;
                 return;
             }
-            if (!navigator.onLine) {
-                enqueueSyncOp({ type: 'delete_row', table: 'expenses', rowId: id });
-                return;
-            }
-            setSyncBar(true);
-            try {
-                const { error } = await supabaseClient.from('expenses').delete().eq('id', id).eq('user_id', currentUser.id);
-                if (error) throw error;
-            } catch (err) {
-                enqueueSyncOp({ type: 'delete_row', table: 'expenses', rowId: id });
-            } finally {
-                setSyncBar(false);
+
+            const sorted = [...list].sort((a, b) => b.date.localeCompare(a.date));
+            container.innerHTML = sorted.map(item => {
+                const isPos = Number(item.net) >= 0;
+                return `
+                <div class="p-3.5 flex items-center justify-between gap-2.5">
+                    <div class="min-w-0 space-y-0.5">
+                        <div class="flex items-center gap-2">
+                            <span class="font-black text-sm text-slate-900 dark:text-white">${escapeHtml(item.date)}</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isPos ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300'}">
+                                الصافي: ${Number(item.net).toLocaleString()} د.ع
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                            مبيعات: ${Number(item.sales).toLocaleString()} • صرفيات: ${(Number(item.purchases) + Number(item.expenses)).toLocaleString()} د.ع
+                        </p>
+                        ${item.notes ? `<p class="text-[11px] text-slate-400 truncate">${escapeHtml(item.notes)}</p>` : ''}
+                    </div>
+                    <button type="button" onclick="deleteCashboxEntry('${escapeHtml(item.id)}')" class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/50 active:scale-95 text-rose-600 flex items-center justify-center shrink-0 no-print">
+                        <i class="fa-solid fa-trash text-xs"></i>
+                    </button>
+                </div>`;
+            }).join('');
+        }
+
+        async function deleteCashboxEntry(id) {
+            if (!confirm("حذف سجل هذه القاصة؟")) return;
+            appData.cashbox = (appData.cashbox || []).filter(c => c.id !== id);
+            saveLocalData();
+            onCashboxDateChange();
+            renderCashboxHistory();
+            generateReport();
+            notify("تم حذف سجل القاصة", 'danger');
+            if (isCloudMode && supabaseClient && currentUser && navigator.onLine && !String(id).startsWith('cb_')) {
+                try { await supabaseClient.from('daily_cashbox').delete().eq('id', id).eq('user_id', currentUser.id); } catch (_) {}
             }
         }
 
         // --- MATERIALS ---
         function renderMaterialsList() {
             const container = document.getElementById('materialsListContainer');
-            if (appData.materials.length === 0) {
-                container.innerHTML = `<div class="text-center py-10 px-4"><p class="text-slate-500 dark:text-slate-400 text-xs">${appData.lang === 'en' ? 'No materials defined' : 'لا توجد مواد معرفة'}</p></div>`;
+            if (!appData.materials.length) {
+                container.innerHTML = `<div class="text-center py-10 px-4"><p class="text-slate-500 dark:text-slate-400 text-xs">لا توجد مواد معرفة</p></div>`;
                 return;
             }
-            let html = '';
-            appData.materials.forEach(mat => {
-                html += `
-                    <div class="p-3.5 flex items-center justify-between gap-2.5">
-                        <div class="flex items-center gap-2.5 min-w-0">
-                            <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0"><i class="fa-solid fa-box text-xs"></i></div>
-                            <div class="min-w-0">
-                                <h4 class="font-bold text-slate-900 dark:text-white text-sm truncate">${escapeHtml(mat.name)}</h4>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">${escapeHtml(mat.unit)} ${mat.defaultPrice ? '• ' + Number(mat.defaultPrice).toLocaleString() + ' د.ع' : ''}</p>
-                            </div>
+            container.innerHTML = appData.materials.map(mat => `
+                <div class="p-3.5 flex items-center justify-between gap-2.5">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0"><i class="fa-solid fa-box text-xs"></i></div>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-slate-900 dark:text-white text-sm truncate">${escapeHtml(mat.name)}</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">${escapeHtml(mat.unit)} • ${Number(mat.defaultPrice || 0).toLocaleString()} د.ع</p>
                         </div>
-                        <button type="button" onclick="deleteMaterial('${escapeHtml(mat.id)}')" class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/50 active:scale-95 text-rose-600 flex items-center justify-center shrink-0"><i class="fa-solid fa-trash text-xs"></i></button>
-                    </div>`;
-            });
-            container.innerHTML = html;
+                    </div>
+                    <button type="button" onclick="deleteMaterial('${escapeHtml(mat.id)}')" class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/50 active:scale-95 text-rose-600 flex items-center justify-center shrink-0"><i class="fa-solid fa-trash text-xs"></i></button>
+                </div>`).join('');
         }
 
         function openMaterialModal() {
-            document.getElementById('materialModal').classList.remove('hidden');
+            document.getElementById('matName').value = '';
+            document.getElementById('matUnit').selectedIndex = 0;
+            document.getElementById('matDefaultPrice').value = '0';
+            toggleModal('materialModal', true);
             setTimeout(() => document.getElementById('matName').focus(), 50);
-        }
-
-        function closeMaterialModal() {
-            document.getElementById('materialModal').classList.add('hidden');
         }
 
         async function saveMaterial(e) {
@@ -1500,196 +1185,217 @@
             const name = document.getElementById('matName').value.trim();
             const unit = document.getElementById('matUnit').value;
             const defaultPrice = parseFloat(document.getElementById('matDefaultPrice').value) || 0;
-            const tempId = 'mat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            const tempId = 'mat_' + Date.now();
 
             appData.materials.push({ id: tempId, name, unit, defaultPrice });
             saveLocalData();
             updateAllViews();
 
             document.getElementById('matName').value = '';
-            document.getElementById('matDefaultPrice').value = '';
-            closeMaterialModal();
-            showToast(appData.lang === 'en' ? "Material added" : `تمت إضافة (${name}) للمواد الأساسية`, 'success');
+            document.getElementById('matUnit').selectedIndex = 0;
+            document.getElementById('matDefaultPrice').value = '0';
+            toggleModal('materialModal', false);
+            notify(`تمت إضافة (${name}) للمواد الأساسية`);
 
-            if (isCloudMode && supabaseClient && currentUser) {
-                const payload = { name, unit, default_price: defaultPrice };
-                if (!navigator.onLine) {
-                    enqueueSyncOp({ tempId, type: 'insert_material', payload });
-                    return;
-                }
-                setSyncBar(true);
+            if (isCloudMode && supabaseClient && currentUser && navigator.onLine) {
                 try {
-                    const { data, error } = await supabaseClient.from('materials').insert([{ user_id: currentUser.id, ...payload }]).select().single();
-                    if (error) throw error;
+                    const { data } = await supabaseClient.from('materials').insert([{ user_id: currentUser.id, name, unit, default_price: defaultPrice }]).select().single();
                     if (data) {
-                        if (pendingDeletedTempIds.has(tempId)) {
-                            pendingDeletedTempIds.delete(tempId);
-                            await supabaseClient.from('materials').delete().eq('id', data.id).eq('user_id', currentUser.id);
-                        } else {
-                            const idx = appData.materials.findIndex(x => x.id === tempId);
-                            if (idx !== -1) appData.materials[idx].id = data.id;
-                            saveLocalData();
-                            updateMaterialsDropdown();
-                        }
+                        const idx = appData.materials.findIndex(x => x.id === tempId);
+                        if (idx !== -1) { appData.materials[idx].id = data.id; saveLocalData(); updateMaterialsDropdown(); }
                     }
-                } catch (err) {
-                    if (!pendingDeletedTempIds.has(tempId)) enqueueSyncOp({ tempId, type: 'insert_material', payload });
-                } finally {
-                    setSyncBar(false);
-                }
+                } catch (_) {}
             }
         }
 
         async function deleteMaterial(id) {
-            if (!confirm(appData.lang === 'en' ? "Delete material?" : "حذف المادة؟")) return;
+            if (!confirm("حذف المادة؟")) return;
             appData.materials = appData.materials.filter(m => m.id !== id);
             saveLocalData();
             updateAllViews();
-            showToast(appData.lang === 'en' ? "Deleted" : "تم حذف المادة", 'danger');
-
-            if (!isCloudMode || !supabaseClient || !currentUser) return;
-            if (String(id).startsWith('mat_')) {
-                pendingDeletedTempIds.add(id);
-                removeQueuedOpByTempId(id);
-                return;
-            }
-            if (!navigator.onLine) {
-                enqueueSyncOp({ type: 'delete_row', table: 'materials', rowId: id });
-                return;
-            }
-            setSyncBar(true);
-            try {
-                const { error } = await supabaseClient.from('materials').delete().eq('id', id).eq('user_id', currentUser.id);
-                if (error) throw error;
-            } catch (err) {
-                enqueueSyncOp({ type: 'delete_row', table: 'materials', rowId: id });
-            } finally {
-                setSyncBar(false);
+            notify("تم حذف المادة", 'danger');
+            if (isCloudMode && supabaseClient && currentUser && navigator.onLine && !String(id).startsWith('mat_')) {
+                try { await supabaseClient.from('materials').delete().eq('id', id).eq('user_id', currentUser.id); } catch (_) {}
             }
         }
 
-        // --- REPORTS ---
-        function toggleInvoiceDetails(detailId) {
-            const el = document.getElementById(detailId);
-            if (el) el.classList.toggle('hidden');
+        // --- UNIFIED REPORTS (التقارير العامة الشاملة حسب الأيام والتاريخ) ---
+        function setReportToday() {
+            const today = getTodayISO();
+            document.getElementById('reportStartDate').value = today;
+            document.getElementById('reportEndDate').value = today;
+            generateReport();
+        }
+
+        function resetReportFilter() {
+            document.getElementById('reportStartDate').value = '';
+            document.getElementById('reportEndDate').value = '';
+            document.getElementById('reportTypeFilter').value = 'all';
+            generateReport();
         }
 
         function generateReport() {
-            const container = document.getElementById('reportArchiveList');
-            const startDate = document.getElementById('reportStartDate').value;
-            const endDate = document.getElementById('reportEndDate').value;
-            const reportType = document.getElementById('reportTypeFilter').value;
+            const start = document.getElementById('reportStartDate').value;
+            const end = document.getElementById('reportEndDate').value;
+            const type = document.getElementById('reportTypeFilter').value;
 
-            let sessions = appData.archiveSessions.map((s, index) => ({ ...s, listNumber: index + 1 }));
+            let cashboxes = [...(appData.cashbox || [])];
+            let sessions = appData.archiveSessions.map((s, i) => ({ ...s, listNumber: i + 1 }));
             let expenses = [...appData.expenses];
 
-            if (startDate) {
-                sessions = sessions.filter(s => s.date >= startDate);
-                expenses = expenses.filter(ex => ex.date >= startDate);
+            if (start) {
+                cashboxes = cashboxes.filter(c => c.date >= start);
+                sessions = sessions.filter(s => s.date >= start);
+                expenses = expenses.filter(ex => ex.date >= start);
             }
-            if (endDate) {
-                sessions = sessions.filter(s => s.date <= endDate);
-                expenses = expenses.filter(ex => ex.date <= endDate);
-            }
-
-            const purchasesSum = (reportType === 'all' || reportType === 'purchases') ? sessions.reduce((sum, s) => sum + Number(s.total), 0) : 0;
-            const expensesSum = (reportType === 'all' || reportType === 'expenses') ? expenses.reduce((sum, ex) => sum + Number(ex.amount), 0) : 0;
-
-            document.getElementById('repPurchasesTotal').innerText = purchasesSum.toLocaleString() + ' د.ع';
-            document.getElementById('repExpensesTotal').innerText = expensesSum.toLocaleString() + ' د.ع';
-            document.getElementById('repGrandTotal').innerText = (purchasesSum + expensesSum).toLocaleString() + ' د.ع';
-
-            let html = '';
-            let hasAny = false;
-
-            if ((reportType === 'all' || reportType === 'purchases') && sessions.length > 0) {
-                hasAny = true;
-                [...sessions].reverse().forEach((s) => {
-                    const detailBoxId = `invoice_details_${s.id}`;
-                    let itemsRowsHtml = '';
-
-                    if (s.items && s.items.length > 0) {
-                        s.items.forEach((it, idx) => {
-                            const lineTotal = Number(it.qty) * Number(it.price);
-                            itemsRowsHtml += `
-                                <div class="flex justify-between items-center text-xs text-slate-700 dark:text-slate-200 py-2 border-b border-slate-100 dark:border-slate-700 last:border-none">
-                                    <div>
-                                        <span class="font-bold text-emerald-700 dark:text-emerald-400">${idx + 1}. ${escapeHtml(it.name)}</span>
-                                        <span class="text-slate-500 dark:text-slate-400 block">${it.qty} ${escapeHtml(it.unit)} × ${Number(it.price).toLocaleString()} د.ع</span>
-                                    </div>
-                                    <span class="font-black">${lineTotal.toLocaleString()} د.ع</span>
-                                </div>`;
-                        });
-                    } else {
-                        itemsRowsHtml = `<p class="text-xs text-slate-400">لا توجد تفاصيل مواد مسجلة</p>`;
-                    }
-
-                    html += `
-                        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 space-y-2.5">
-                            <div class="flex items-center justify-between gap-2">
-                                <div class="flex items-center gap-2.5 min-w-0">
-                                    <div class="px-2.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shrink-0">${t('listNumber')} #${s.listNumber}</div>
-                                    <div class="min-w-0">
-                                        <div class="font-black text-slate-900 dark:text-white text-sm">${Number(s.total).toLocaleString()} د.ع</div>
-                                        <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate"><i class="fa-regular fa-clock ml-1"></i>${escapeHtml(s.timestamp || s.date)}</div>
-                                    </div>
-                                </div>
-                                <button type="button" onclick="toggleInvoiceDetails('${escapeHtml(detailBoxId)}')" class="min-h-[40px] bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 shrink-0 no-print">
-                                    <i class="fa-solid fa-list-ul"></i><span>${t('btnDetails')}</span>
-                                </button>
-                            </div>
-                            <div id="${escapeHtml(detailBoxId)}" class="hidden bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1.5">
-                                <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-1.5 text-[11px] font-bold text-slate-500">
-                                    <span>${t('purchasedItemsHeader')}</span>
-                                    <span>${escapeHtml(s.timestamp || s.date)}</span>
-                                </div>
-                                <div>${itemsRowsHtml}</div>
-                            </div>
-                        </div>`;
-                });
+            if (end) {
+                cashboxes = cashboxes.filter(c => c.date <= end);
+                sessions = sessions.filter(s => s.date <= end);
+                expenses = expenses.filter(ex => ex.date <= end);
             }
 
-            if ((reportType === 'all' || reportType === 'expenses') && expenses.length > 0) {
-                hasAny = true;
-                let expRows = '';
-                [...expenses].reverse().forEach(ex => {
-                    expRows += `
-                        <div class="flex justify-between items-center text-xs text-slate-700 dark:text-slate-200 py-2 border-b border-amber-100 dark:border-slate-700 last:border-none">
-                            <div>
-                                <span class="font-bold">${escapeHtml(ex.title)}</span>
-                                <span class="text-slate-500 dark:text-slate-400 block">${escapeHtml(ex.category)} • ${escapeHtml(ex.date)}</span>
-                            </div>
-                            <span class="font-black text-amber-700 dark:text-amber-400">${Number(ex.amount).toLocaleString()} د.ع</span>
-                        </div>`;
-                });
-                html += `
-                    <div class="p-3.5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 space-y-2">
-                        <div class="font-bold text-amber-900 dark:text-amber-300 text-xs flex items-center gap-1.5"><i class="fa-solid fa-wallet"></i><span>${t('expensesRecordTitle')} (${expenses.length})</span></div>
-                        <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-amber-100 dark:border-slate-700">${expRows}</div>
+            const includeCb = (type === 'all' || type === 'cashbox');
+            const includePur = (type === 'all' || type === 'purchases');
+            const includeExp = (type === 'all' || type === 'expenses');
+
+            const salesSum = includeCb ? cashboxes.reduce((s, c) => s + Number(c.sales || 0), 0) : 0;
+            const purSum = includePur ? sessions.reduce((s, x) => s + Number(x.total || 0), 0) : 0;
+            const expSum = includeExp ? expenses.reduce((s, x) => s + Number(x.amount || 0), 0) : 0;
+            const netSum = salesSum - (purSum + expSum);
+
+            document.getElementById('repSalesTotal').innerText = salesSum.toLocaleString() + ' د.ع';
+            document.getElementById('repPurchasesTotal').innerText = purSum.toLocaleString() + ' د.ع';
+            document.getElementById('repExpensesTotal').innerText = expSum.toLocaleString() + ' د.ع';
+
+            const netEl = document.getElementById('repNetTotal');
+            netEl.innerText = netSum.toLocaleString() + ' د.ع';
+            netEl.className = `font-black text-sm block truncate ${netSum >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+            // Group all movements by Date
+            const dayMap = {};
+            const ensureDay = d => {
+                if (!dayMap[d]) dayMap[d] = { date: d, cashbox: null, purchases: [], expenses: [] };
+                return dayMap[d];
+            };
+
+            if (includeCb) cashboxes.forEach(c => { ensureDay(c.date).cashbox = c; });
+            if (includePur) sessions.forEach(s => { ensureDay(s.date).purchases.push(s); });
+            if (includeExp) expenses.forEach(ex => { ensureDay(ex.date).expenses.push(ex); });
+
+            const sortedDates = Object.keys(dayMap).sort((a, b) => b.localeCompare(a));
+            document.getElementById('reportDaysCountBadge').innerText = `${sortedDates.length} أيام`;
+
+            const container = document.getElementById('reportTimelineContainer');
+            if (!sortedDates.length) {
+                container.innerHTML = `
+                    <div class="bg-white dark:bg-slate-800 rounded-3xl p-10 text-center border border-slate-100 dark:border-slate-700">
+                        <i class="fa-solid fa-folder-open text-slate-300 dark:text-slate-600 text-3xl mb-2"></i>
+                        <p class="text-slate-500 dark:text-slate-400 text-xs">لا توجد أي حركات مسجلة في هذه الفترة</p>
                     </div>`;
+                return;
             }
 
-            if (!hasAny) html = `<p class="text-xs text-slate-400 text-center py-6">${appData.lang === 'en' ? 'No records found in this period' : 'لا توجد سجلات في هذه الفترة'}</p>`;
-            container.innerHTML = html;
-            document.getElementById('reportResultContainer').classList.remove('hidden');
+            container.innerHTML = sortedDates.map(date => {
+                const day = dayMap[date];
+                const dSales = day.cashbox ? Number(day.cashbox.sales || 0) : 0;
+                const dPur = day.purchases.reduce((s, p) => s + Number(p.total || 0), 0);
+                const dExp = day.expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+                const dNet = dSales - (dPur + dExp);
+
+                let itemsHtml = '';
+
+                if (day.cashbox) {
+                    const cbPos = Number(day.cashbox.net) >= 0;
+                    itemsHtml += `
+                        <div class="p-3.5 rounded-2xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/60 space-y-1.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="inline-flex items-center gap-1.5 text-xs font-black text-sky-800 dark:text-sky-300">
+                                    <i class="fa-solid fa-vault"></i><span>إغلاق القاصة اليومية</span>
+                                </span>
+                                <span class="text-xs font-black px-2.5 py-0.5 rounded-full ${cbPos ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'}">
+                                    صافي القاصة: ${Number(day.cashbox.net).toLocaleString()} د.ع
+                                </span>
+                            </div>
+                            <div class="text-xs text-slate-700 dark:text-slate-200 flex flex-wrap gap-x-3 gap-y-1">
+                                <span>المبيعات: <b class="text-sky-700 dark:text-sky-300">${Number(day.cashbox.sales).toLocaleString()} د.ع</b></span>
+                                <span>المشتريات: <b>${Number(day.cashbox.purchases).toLocaleString()} د.ع</b></span>
+                                <span>المصروفات: <b>${Number(day.cashbox.expenses).toLocaleString()} د.ع</b></span>
+                            </div>
+                            ${day.cashbox.notes ? `<div class="text-[11px] text-slate-500 dark:text-slate-400">ملاحظة: ${escapeHtml(day.cashbox.notes)}</div>` : ''}
+                        </div>`;
+                }
+
+                day.purchases.forEach(s => {
+                    const rows = (s.items || []).map((it, idx) => `
+                        <div class="flex justify-between items-center text-xs py-1.5 border-b border-emerald-100/80 dark:border-slate-700 last:border-none">
+                            <div class="min-w-0 pl-2">
+                                <span class="font-bold text-slate-800 dark:text-slate-100">${idx + 1}. ${escapeHtml(it.name)}</span>
+                                <span class="text-[11px] text-slate-500 dark:text-slate-400 mr-1">(${it.qty} ${escapeHtml(it.unit)} × ${Number(it.price).toLocaleString()})</span>
+                            </div>
+                            <span class="font-bold text-emerald-700 dark:text-emerald-400 shrink-0">${(Number(it.qty) * Number(it.price)).toLocaleString()} د.ع</span>
+                        </div>`).join('');
+
+                    itemsHtml += `
+                        <div class="p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-800/60 space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex items-center gap-1 text-xs font-black text-emerald-800 dark:text-emerald-300">
+                                        <i class="fa-solid fa-basket-shopping"></i><span>قائمة شراء #${s.listNumber}</span>
+                                    </span>
+                                    <span class="text-[10px] text-slate-500 dark:text-slate-400">${escapeHtml((s.timestamp || '').split('|')[1] || '')}</span>
+                                </div>
+                                <span class="font-black text-xs text-emerald-700 dark:text-emerald-300">${Number(s.total).toLocaleString()} د.ع</span>
+                            </div>
+                            <div class="bg-white/80 dark:bg-slate-800/80 rounded-xl px-3 py-1.5 border border-emerald-100 dark:border-slate-700">
+                                ${rows}
+                            </div>
+                        </div>`;
+                });
+
+                day.expenses.forEach(ex => {
+                    itemsHtml += `
+                        <div class="p-3.5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/25 border border-amber-200 dark:border-amber-800/60 flex items-center justify-between gap-2.5">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-1.5">
+                                    <i class="fa-solid fa-wallet text-amber-600 dark:text-amber-400 text-xs"></i>
+                                    <span class="font-bold text-xs text-slate-900 dark:text-white truncate">${escapeHtml(ex.title)}</span>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 font-bold shrink-0">${escapeHtml(ex.category)}</span>
+                                </div>
+                                ${ex.notes ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">${escapeHtml(ex.notes)}</p>` : ''}
+                            </div>
+                            <span class="font-black text-xs text-amber-700 dark:text-amber-400 shrink-0">${Number(ex.amount).toLocaleString()} د.ع</span>
+                        </div>`;
+                });
+
+                return `
+                    <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-xs border border-slate-200 dark:border-slate-700 overflow-hidden">
+                        <div class="bg-slate-100 dark:bg-slate-700/70 px-4 py-3 border-b border-slate-200 dark:border-slate-600 flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-regular fa-calendar-days text-emerald-600 dark:text-emerald-400"></i>
+                                <span class="font-black text-sm text-slate-900 dark:text-white">${escapeHtml(date)}</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-[11px] font-bold">
+                                ${dSales > 0 ? `<span class="text-sky-700 dark:text-sky-300">مبيعات: ${dSales.toLocaleString()}</span>` : ''}
+                                ${(dPur + dExp) > 0 ? `<span class="text-amber-700 dark:text-amber-300">صرفيات: ${(dPur + dExp).toLocaleString()}</span>` : ''}
+                                <span class="px-2 py-0.5 rounded-lg ${dNet >= 0 ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}">
+                                    الصافي: ${dNet.toLocaleString()} د.ع
+                                </span>
+                            </div>
+                        </div>
+                        <div class="p-3.5 space-y-2.5">
+                            ${itemsHtml}
+                        </div>
+                    </div>`;
+            }).join('');
         }
 
         // --- SETTINGS & PROFILE ---
-        function populateSettingsFields() {
+        function openSettingsModal() {
             document.getElementById('settingAppName').value = appData.appName || "دُگّان";
             document.getElementById('settingUserName').value = appData.userName || "";
             document.getElementById('settingThemeMode').value = appData.theme || 'light';
-            document.getElementById('settingLanguage').value = appData.lang || 'ar';
-            document.getElementById('settingsAvatarPreview').src = appData.avatarUrl || GENERATED_APP_ICON_192;
-        }
-
-        function openSettingsModal() {
-            populateSettingsFields();
-            document.getElementById('settingsModal').classList.remove('hidden');
-        }
-
-        function closeSettingsModal() {
-            document.getElementById('settingsModal').classList.add('hidden');
+            document.getElementById('settingsAvatarPreview').src = appData.avatarUrl || APP_ICON;
+            toggleModal('settingsModal', true);
         }
 
         function previewProfileAvatar(event) {
@@ -1697,12 +1403,11 @@
             if (!file) return;
             pendingAvatarFile = file;
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = e => {
                 const img = new Image();
-                img.onload = function() {
+                img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const maxDim = 200;
-                    const scale = Math.min(maxDim / img.width, maxDim / img.height, 1);
+                    const scale = Math.min(200 / img.width, 200 / img.height, 1);
                     canvas.width = Math.round(img.width * scale);
                     canvas.height = Math.round(img.height * scale);
                     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -1719,151 +1424,75 @@
             const newAppName = document.getElementById('settingAppName').value.trim();
             const newUserName = document.getElementById('settingUserName').value.trim();
             const newTheme = document.getElementById('settingThemeMode').value;
-            const newLang = document.getElementById('settingLanguage').value;
 
             let finalAvatarUrl = pendingAvatarDataUrl || appData.avatarUrl;
             appData.appName = newAppName;
             appData.userName = newUserName;
             appData.avatarUrl = finalAvatarUrl;
             appData.theme = newTheme;
-            appData.lang = newLang;
 
             localStorage.setItem('daggan_theme', newTheme);
-            localStorage.setItem('daggan_lang', newLang);
+            document.documentElement.classList.toggle('dark', newTheme === 'dark');
             saveLocalData();
-
-            applyThemeAndLang();
-            renderUserSessionHeader();
+            renderUserHeader();
             updateAllViews();
-            closeSettingsModal();
-            showToast(newLang === 'en' ? "Settings saved" : "تم حفظ الإعدادات والبروفايل", 'success');
+            toggleModal('settingsModal', false);
+            notify("تم حفظ الإعدادات والبروفايل");
 
-            if (isCloudMode && supabaseClient && currentUser) {
-                const profilePayload = {
-                    full_name: newUserName,
-                    project_name: newAppName,
-                    avatar_url: finalAvatarUrl,
-                    theme: newTheme,
-                    lang: newLang,
-                    updated_at: new Date().toISOString()
-                };
-
-                if (!navigator.onLine) {
-                    enqueueSyncOp({ type: 'update_profile', payload: profilePayload });
-                    pendingAvatarFile = null;
-                    pendingAvatarDataUrl = null;
-                    return;
-                }
-
-                setSyncBar(true);
+            if (isCloudMode && supabaseClient && currentUser && navigator.onLine) {
                 try {
                     if (pendingAvatarFile) {
                         const filePath = `avatar_${currentUser.id}_${Date.now()}.jpg`;
-                        const blobToUpload = pendingAvatarDataUrl ? await (await fetch(pendingAvatarDataUrl)).blob() : pendingAvatarFile;
-                        const { error: upErr } = await supabaseClient.storage.from('avatars').upload(filePath, blobToUpload, { contentType: 'image/jpeg', upsert: true });
+                        const blob = pendingAvatarDataUrl ? await (await fetch(pendingAvatarDataUrl)).blob() : pendingAvatarFile;
+                        const { error: upErr } = await supabaseClient.storage.from('avatars').upload(filePath, blob, { contentType: 'image/jpeg', upsert: true });
                         if (!upErr) {
-                            const { data: pubData } = supabaseClient.storage.from('avatars').getPublicUrl(filePath);
-                            finalAvatarUrl = pubData.publicUrl;
-                            profilePayload.avatar_url = finalAvatarUrl;
+                            finalAvatarUrl = supabaseClient.storage.from('avatars').getPublicUrl(filePath).data.publicUrl;
                             appData.avatarUrl = finalAvatarUrl;
                             saveLocalData();
-                            renderUserSessionHeader();
+                            renderUserHeader();
                         }
                     }
-
                     const authMeta = { full_name: newUserName, project_name: newAppName };
                     if (finalAvatarUrl && !finalAvatarUrl.startsWith('data:')) authMeta.avatar_url = finalAvatarUrl;
                     await supabaseClient.auth.updateUser({ data: authMeta });
-
-                    const { error } = await supabaseClient.from('profiles').upsert({ id: currentUser.id, ...profilePayload });
-                    if (error) throw error;
-                } catch (err) {
-                    enqueueSyncOp({ type: 'update_profile', payload: profilePayload });
-                } finally {
-                    setSyncBar(false);
-                }
+                    await supabaseClient.from('profiles').upsert({ id: currentUser.id, full_name: newUserName, project_name: newAppName, avatar_url: finalAvatarUrl, theme: newTheme, updated_at: new Date().toISOString() });
+                } catch (_) {}
             }
-
             pendingAvatarFile = null;
             pendingAvatarDataUrl = null;
         }
 
-        function escapeHtml(str) {
-            return String(str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-        }
-
-        // --- PWA Service Worker & التثبيت الفوري بضغطة واحدة ---
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(() => {});
-            });
-        }
-
-        function isRunningStandalone() {
-            return (
-                window.matchMedia('(display-mode: standalone)').matches ||
-                window.matchMedia('(display-mode: fullscreen)').matches ||
-                window.navigator.standalone === true ||
-                document.referrer.includes('android-app://')
-            );
-        }
-
-        function initPwaInstallPrompt() {
-            if (isRunningStandalone()) return;
-            if (window.__deferredInstallPrompt) {
-                showInstallPromptBanner();
-            }
-        }
-
-        window.onInstallPromptReady = function() {
-            if (!isRunningStandalone()) {
-                showInstallPromptBanner();
-            }
-        };
-
-        window.addEventListener('appinstalled', () => {
-            window.__deferredInstallPrompt = null;
-            const banner = document.getElementById('pwa-install-banner');
-            if (banner) banner.remove();
-            sendAppNotification("تطبيق دُگّان", "تم تثبيت التطبيق بنجاح على شاشة هاتفك!", 'success');
-        });
-
-        async function triggerDirectInstall() {
-            const promptEvent = window.__deferredInstallPrompt;
-            if (!promptEvent) return;
-            promptEvent.prompt();
-            const { outcome } = await promptEvent.userChoice;
-            if (outcome === 'accepted') {
-                const banner = document.getElementById('pwa-install-banner');
-                if (banner) banner.remove();
-            }
-            window.__deferredInstallPrompt = null;
-        }
+        // --- PWA ---
+        if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 
         function showInstallPromptBanner() {
-            if (document.getElementById('pwa-install-banner') || isRunningStandalone() || !window.__deferredInstallPrompt) return;
-
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            if (isStandalone || document.getElementById('pwa-install-banner') || !window.__deferredInstallPrompt) return;
+            if (!document.getElementById('cashboxOnboardingOverlay')?.classList.contains('hidden')) return;
             const banner = document.createElement('div');
             banner.id = 'pwa-install-banner';
             banner.className = 'no-print';
-            banner.style.cssText = 'position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); left: 12px; right: 12px; max-width: 440px; margin: 0 auto; z-index: 40;';
+            banner.style.cssText = 'position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 84px);left:12px;right:12px;max-width:440px;margin:0 auto;z-index:40;';
             banner.innerHTML = `
-                <div style="background: #0f172a; color: #fff; padding: 13px; border-radius: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.45); border: 1px solid rgba(16,185,129,0.4);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-                        <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                            <img src="${GENERATED_APP_ICON_192}" style="width: 42px; height: 42px; border-radius: 12px; object-fit: cover; flex-shrink: 0;">
-                            <div style="min-width: 0;">
-                                <div style="font-weight: 800; font-size: 13px;">تثبيت تطبيق دُگّان على هاتفك</div>
-                                <div style="font-size: 11px; color: #94a3b8;">يعمل بملء الشاشة كتطبيق مستقل</div>
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                            <button type="button" onclick="triggerDirectInstall()" style="background: #16a34a; color: #fff; border: none; padding: 9px 14px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 13px;">تثبيت</button>
-                            <button type="button" onclick="document.getElementById('pwa-install-banner')?.remove()" style="background: rgba(255,255,255,0.12); color: #cbd5e1; border: none; padding: 9px 11px; border-radius: 12px; cursor: pointer; font-size: 13px;">✕</button>
-                        </div>
+                <div style="background:#0f172a;color:#fff;padding:13px;border-radius:20px;box-shadow:0 12px 30px rgba(0,0,0,0.45);border:1px solid rgba(16,185,129,0.4);display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                        <img src="${APP_ICON}" style="width:40px;height:40px;border-radius:12px;flex-shrink:0;">
+                        <div style="min-width:0;"><div style="font-weight:800;font-size:13px;">تثبيت تطبيق دُگّان</div><div style="font-size:11px;color:#94a3b8;">يعمل بملء الشاشة كتطبيق مستقل</div></div>
+                    </div>
+                    <div style="display:flex;gap:6px;flex-shrink:0;">
+                        <button type="button" onclick="triggerDirectInstall()" style="background:#16a34a;color:#fff;border:none;padding:8px 13px;border-radius:12px;font-weight:bold;font-size:13px;">تثبيت</button>
+                        <button type="button" onclick="document.getElementById('pwa-install-banner')?.remove()" style="background:rgba(255,255,255,0.12);color:#cbd5e1;border:none;padding:8px 10px;border-radius:12px;font-size:13px;">✕</button>
                     </div>
                 </div>`;
             document.body.appendChild(banner);
+        }
+
+        async function triggerDirectInstall() {
+            if (!window.__deferredInstallPrompt) return;
+            window.__deferredInstallPrompt.prompt();
+            await window.__deferredInstallPrompt.userChoice;
+            window.__deferredInstallPrompt = null;
+            document.getElementById('pwa-install-banner')?.remove();
         }
     </script>
 </body>
